@@ -19,3 +19,6 @@ log
 
 wp-content/cache
 wp-content/w3tc-config
+
+# Sometimes its nice to store database dumps, so just ignore those
+db*.sql
