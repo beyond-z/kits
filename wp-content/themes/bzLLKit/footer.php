@@ -11,6 +11,13 @@
 ?>
 		</div><!-- .site-content -->
 		<footer id="footer" class="site-footer" role="contentinfo">
+			<p>
+				<?php 
+				$copyrightID = 175;
+				$copyright = get_post($copyrightID);
+				echo apply_filters('the_content', $copyright->post_content);
+				?>
+			</p>
 		</footer><!-- .site-footer -->
 	</div><!-- .site-inner -->
 </div><!-- .site -->

@@ -1,6 +1,6 @@
 <?php
 /**
- * The template for displaying generic single posts and attachments
+ * The template for displaying kits
  *
  * @package WordPress
  * @subpackage Braven_LL_Kit
@@ -18,7 +18,7 @@ get_header(); ?>
 			</div>
 			<div class="kit-masthead">
 				<h1>
-					<?php the_title();?>
+					<?php echo __('Learning Lab ','bz'). bz_calculate_kit_number() .': '. get_the_title(); // bz_calculate_kit_number() is in functions.php ?>
 				</h1>
 				<?php the_excerpt();?>
 			</div>
@@ -30,12 +30,16 @@ get_header(); ?>
 	//make sure there's at least the first outcome, then get all three:
 	if ($customfields['bz_kit_outcomes']){ ?>
 		<div class="outcomes">
-			<h2><?php echo __('Fellows Will', 'bz'); ?></h2>
+			<h2><?php echo __('Fellows Will:', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_outcomes'][0]);?>
 		</div> <?php
 	} ?>
 	<?php 
-	$materials; // so we can collect materials as we iterate over activities;
+	$materials;
+	$kit_materials = wp_get_object_terms( $post->ID, 'material' );
+	foreach ($kit_materials as $kit_material) {
+		$materials[$kit_material->slug] = $kit_material;
+	}
 	$activity_posts; // to collect activity IDs for query and display further down.	
 	echo '<h2>'.__('Agenda','bz').'</h2>';
 	$dt = DateTime::createFromFormat('H:i', '18:00'); // of course at some point we should draw the start time from the CMS or LMS...
@@ -84,7 +88,7 @@ get_header(); ?>
 		if ($customfields['bz_kit_prework']){ ?>
 			<div class="outcomes">
 				<h2><?php echo __('Fellows\' Prework', 'bz'); ?></h2>
-				<?php echo apply_filters('the_content',$customfields['bz_kit_outcomes'][0]);?>
+				<?php echo apply_filters('the_content',$customfields['bz_kit_prework'][0]);?>
 			</div> <?php
 		} 
 		?>
@@ -102,7 +106,7 @@ get_header(); ?>
 		if ($customfields['bz_kit_important']){ ?>
 			<div class="outcomes">
 				<h2><?php echo __('What\'s most important', 'bz'); ?></h2>
-				<?php echo apply_filters('the_content',$customfields['bz_kit_outcomes'][0]);?>
+				<?php echo apply_filters('the_content',$customfields['bz_kit_important'][0]);?>
 			</div> <?php
 		} 
 		?>
@@ -117,12 +121,12 @@ get_header(); ?>
 		);
 		$sub_activities = new WP_Query($args);
 		if($sub_activities->have_posts()): ?>
-			<h2>Activity Plan</h2>
 			<div class="sub-activities">
-			<?php while ($sub_activities->have_posts()):
-				$sub_activities->the_post();			
-				get_template_part('content','activity');
-			endwhile; ?>
+				<h2 id="activity-plan-header"><?php echo __('Activity Plan', 'bz'); ?></h2>
+				<?php while ($sub_activities->have_posts()):
+					$sub_activities->the_post();			
+					get_template_part('content','activity');
+				endwhile; ?>
 			</div>
 		<?php endif; // $sub_activities
 

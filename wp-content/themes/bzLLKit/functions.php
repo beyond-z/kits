@@ -275,7 +275,7 @@ add_filter( 'wp_calculate_image_sizes', 'bz_content_image_sizes_attr', 10 , 2 );
 show_admin_bar( false );
 
 /** Add custom post types for the LL Kit and its components  */
-// Session
+// Kit:
 function bz_register_kit() {
 
 	$labels = array(
@@ -328,7 +328,7 @@ function bz_register_kit() {
 
 }
 add_action( 'init', 'bz_register_kit', 0 );
-
+// Activity:
 function bz_register_activity() {
 
 	$labels = array(
@@ -363,7 +363,7 @@ function bz_register_activity() {
 		'labels'                => $labels,
 		'supports'              => array( 'title', 'editor', 'excerpt', 'thumbnail', 'revisions', 'custom-fields', 'page-attributes', ),
 		'taxonomies'            => array( 'material', 'post_tag' ),
-		'hierarchical'          => true,
+		'hierarchical'          => false,
 		'public'                => true,
 		'show_ui'               => true,
 		'show_in_menu'          => true,
@@ -378,9 +378,61 @@ function bz_register_activity() {
 		'capability_type'       => 'page',
 	);
 	register_post_type( 'activity', $args );
-
 }
 add_action( 'init', 'bz_register_activity', 0 );
+// Custom content:
+function bz_register_custom_content() {
+
+	$labels = array(
+		'name'                  => _x( 'Custom Content', 'Post Type General Name', 'bz' ),
+		'singular_name'         => _x( 'Custom Content', 'Post Type Singular Name', 'bz' ),
+		'menu_name'             => __( 'Custom Content', 'bz' ),
+		'name_admin_bar'        => __( 'Custom Content', 'bz' ),
+		'archives'              => __( 'Item Archives', 'bz' ),
+		'parent_item_colon'     => __( 'Parent Item:', 'bz' ),
+		'all_items'             => __( 'All Custom Content', 'bz' ),
+		'add_new_item'          => __( 'Add New Custom Content', 'bz' ),
+		'add_new'               => __( 'Add New', 'bz' ),
+		'new_item'              => __( 'New Custom Content', 'bz' ),
+		'edit_item'             => __( 'Edit Custom Content', 'bz' ),
+		'update_item'           => __( 'Update Custom Content', 'bz' ),
+		'view_item'             => __( 'View Custom Content', 'bz' ),
+		'search_items'          => __( 'Search Custom Content', 'bz' ),
+		'not_found'             => __( 'Not found', 'bz' ),
+		'not_found_in_trash'    => __( 'Not found in Trash', 'bz' ),
+		'featured_image'        => __( 'Featured Image', 'bz' ),
+		'set_featured_image'    => __( 'Set featured image', 'bz' ),
+		'remove_featured_image' => __( 'Remove featured image', 'bz' ),
+		'use_featured_image'    => __( 'Use as featured image', 'bz' ),
+		'insert_into_item'      => __( 'Insert into item', 'bz' ),
+		'uploaded_to_this_item' => __( 'Uploaded to this item', 'bz' ),
+		'items_list'            => __( 'Items list', 'bz' ),
+		'items_list_navigation' => __( 'Items list navigation', 'bz' ),
+		'filter_items_list'     => __( 'Filter items list', 'bz' ),
+	);
+	$args = array(
+		'label'                 => __( 'Custom Content', 'bz' ),
+		'labels'                => $labels,
+		'supports'              => array( 'title', 'editor', 'excerpt', 'thumbnail', 'revisions', 'custom-fields', 'page-attributes', ),
+		//'taxonomies'            => array( 'material', 'post_tag' ),
+		'hierarchical'          => false,
+		'public'                => false,
+		'show_ui'               => true,
+		'show_in_menu'          => true,
+		'menu_position'         => 6,
+		'menu_icon'             => 'dashicons-post-status',
+		'show_in_admin_bar'     => true,
+		'show_in_nav_menus'     => true,
+		'can_export'            => true,
+		'has_archive'           => false,		
+		'exclude_from_search'   => true,
+		'publicly_queryable'    => false,
+		'capability_type'       => 'page',
+	);
+	register_post_type( 'customcontent', $args );
+
+}
+add_action( 'init', 'bz_register_custom_content', 0 );
 /**/
 /* Add metaboxes (small dialog boxes on the editor screen to input custom fields) */
 /**/
@@ -390,6 +442,13 @@ add_action( 'init', 'bz_register_activity', 0 );
 /**/
 
 add_filter( 'rwmb_meta_boxes', 'bz_meta_boxes' );
+$bz_scopes = array(
+					 	'cohort' => __('Cohort', 'bz'),
+					 	'pairs' => __('Pairs/Triads', 'bz'),
+					 	'ind' => __('Individuals', 'bz'),
+					 	'all' => __('All Cohorts', 'bz'),
+					 );
+global $bz_scopes;
 function bz_meta_boxes( $meta_boxes ) {
     $meta_boxes[] = array(
         'title'      => __( 'Activity Attributes', 'bz' ),
@@ -404,12 +463,7 @@ function bz_meta_boxes( $meta_boxes ) {
                 'id'   => 'bz_activity_attributes_group_scope',
                 'name' => __( 'Group Scope', 'bz' ),
                 'type' => 'radio',
-					 'options' => array(
-					 	'cohort' => __('Cohort (default if none selected)', 'bz'),
-					 	'pairs' => __('Pairs/Triads', 'bz'),
-					 	'ind' => __('Individuals', 'bz'),
-					 	'all' => __('All Cohorts', 'bz'),
-					 )
+					 'options' => $bz_scopes
             ),
         ),
     );
@@ -503,3 +557,64 @@ add_action( 'admin_menu', 'bz_remove_menus' );
 remove_filter( 'the_title', 'capital_P_dangit', 11 );
 remove_filter( 'the_content', 'capital_P_dangit', 11 );
 remove_filter( 'comment_text', 'capital_P_dangit', 31 );
+
+/* Add custom styles to TinyMCE editor: */
+
+// See here for docs: https://codex.wordpress.org/TinyMCE_Custom_Styles
+// First enable 'styleselect' into the $buttons array on row 2 of the TinyMCE UI
+function bz_mce_buttons_2( $buttons ) {
+	array_unshift( $buttons, 'styleselect' );
+	return $buttons;
+}
+add_filter( 'mce_buttons_2', 'bz_mce_buttons_2' );
+
+// Now add the custom styles:
+function bz_mce_before_init_insert_formats( $init_array ) {  
+	$style_formats = array(  
+		// Each array child is a format with it's own settings
+		array(  
+			'title' => 'Core activity',  
+			'block' => 'div',  
+			'classes' => 'core',
+			'exact' => true,
+			'wrapper' => true,
+		
+		), 
+	);  
+	// Insert the array, JSON ENCODED, into 'style_formats'
+	$init_array['style_formats'] = json_encode( $style_formats );  
+	
+	return $init_array;  
+
+} 
+// Attach callback to 'tiny_mce_before_init' 
+add_filter( 'tiny_mce_before_init', 'bz_mce_before_init_insert_formats' );
+
+/* Figure out week numbers based on published kits */
+function bz_calculate_kit_number() {
+	global $post;
+	$current_kit = $post->ID;
+	$counter = 0;
+	$cargs = array (
+		'post_type'              => 'kit',
+		'post_status'            => 'publish',
+		'nopaging'               => true,
+		'posts_per_page'         => '-1',
+		'order'                  => 'ASC',
+		'orderby'                => 'menu_order',
+	);
+	$ckits = new WP_Query( $cargs );
+	if ( $ckits->have_posts() ) { 
+		while ( $ckits->have_posts() ) { 
+			$ckits->the_post();
+			$counter ++;			
+			if ($current_kit == $post->ID) {
+				return $counter;
+			}
+		}
+	} else {
+		// no posts found
+	}
+	// Restore original Post Data
+	wp_reset_postdata();	
+}

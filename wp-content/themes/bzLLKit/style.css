@@ -312,11 +312,6 @@ th,
 	line-height: normal;
 	font-weight: normal;
 }
-strong, 
-b {
-	font-family: "TradeGothicNo.20-CondBold", "Oswald", "Arial Narrow", sans-serif;
-	font-weight: normal;
-}
 h2 {
 	font-size: 20px;
 	margin-top: 40px;
@@ -340,14 +335,7 @@ a:hover {
 .activity-footer {
 	font-size: 10px;
 	text-transform: uppercase;	
-}/*
-#kits article {
-	border-top: 1px solid #EEE;
-	padding-bottom: 20px;
 }
-#kits article:last-child {
-	border-bottom: 1px solid #EEE;	
-}*/
 .agenda th, 
 .agenda td {
 	text-align: left;
@@ -363,14 +351,17 @@ a:hover {
 .agenda td:first-child {
 	width: 80px;	
 }
+#activity-plan-header {
+	margin-top: 3em;	
+}
 .activity-desc {
 	font-style:italic;
 }
 .activity {
 	position: relative;
 	margin: 0;
-	padding: 1em 0;
-	border-top: solid 1px #eee;
+	padding: 2em 0;
+	border-top: solid 1px #000;
 }
 .activity header {
 	position: relative;
@@ -410,6 +401,25 @@ a:hover {
 	left: -30px;
 	top: 0;
 }
+.activity-outcomes {
+	font-style: italic;	
+}
+.activity-content ul {
+	padding-left: 1em;	
+}
+.activity-content ul li {
+  list-style: none;
+}
+.activity-content ul li:before {
+  content: '\2022';
+  display: block;
+  position: relative;
+  max-width: 0;
+  max-height: 0;
+  left: -0.75em;
+  top: 0;
+  color: #DDD;
+}
 .activity blockquote {
 	line-height: normal;
 	font-style: italic;
@@ -448,7 +458,7 @@ a:hover {
 	width: 0;
 	z-index: 0;
 	margin-top: -8px;
-	left: -9px;
+	left: -8px;
 	top: 50%;
 }
 .activity li {
@@ -494,14 +504,50 @@ a:hover {
 	color: #ACACAC;
 	margin: 0 0.5em;
 }
-.activity .scope:before {
-	content:"(";
-}
-.activity .scope:after {
-	content:")";
-}
 [tabindex="-1"] {
 	outline:none;
+}
+
+#footer {
+	text-align: center;	
+}
+
+/* Notes space */
+.activity > * {
+	transition: margin 0.3s;	
+}
+.with-notes .activity header,
+.with-notes .activity-content,
+.with-notes .activity-outcomes {
+	margin-right: 40%;
+}
+.with-notes .activity-content:after {
+	content: " ";
+	display: block;
+	width: calc(35% + 20px);
+	position: absolute;
+	right: 0;
+	top: 1em;
+	padding: 0;
+	margin: 10px 0;
+	height: calc(100% - 40px);
+	border-left: 1px dotted #CCC;
+}
+.with-notes .activity blockquote {
+    margin-right: 10px;
+}
+#activity-plan-header {
+	position: relative;
+}
+.btn {
+	cursor: pointer;
+	font-size: 0.7em;
+	margin-left: 1em;
+}
+#add-notes-btn {
+	position: absolute;
+	right: 0;
+	bottom: 0;
 }
 @media print {
 	body,
@@ -530,40 +576,29 @@ a:hover {
 	h3 {
 		font-size: 11pt;
 	}
-	ul {
-		margin-left: -1em;
+	#activity-plan-header, 
+	.with-notes .activity-content:after {
+		margin-top: 0;
+	}
+	.btn {
+		display: none;
 	}
 	.activity blockquote {
-		 width: 70%;
-		 margin-left: 0;
+		width: 70%;
+		margin-left: 0;
+	}
+	.with-notes .activity blockquote {
+		width: calc(100% - 2em);  
 	}
 	.activity blockquote:before,
 	.activity blockquote:after {
 		 display: none;
 	}
-	.activity header,
-	.activity-content,
-	.activity-outcomes {
-		margin-right: 40%;
+	.activity-header {
+		padding-bottom: 1em;
 	}
-	.activity-content:after {
-		display: block;
-		content: "Notes:";
-		font-family: "TradeGothicNo.20-CondBold", "Oswald", "Arial Narrow", sans-serif;
-		text-transform: uppercase;
-		font-size: 8pt;
-		color: #EB3B46;
-		width: 35%;
-		position: absolute;
-		right: 0;
-		top: 0;
-		padding: 0;
-		margin: 10px 0;
-		height: calc(100% - 40px);
-		/* this won't print anyway, but looks great on screen! 
-		background-image: linear-gradient(transparent 1pt, #FAFAFA 1pt);
-		background-size: 100% 24pt;
-		*/
+	.activity-header:after {
+		color: #DDD;	
 	}
 	a[href^="http"]:after{
 		content:" (" attr(href) ")";
