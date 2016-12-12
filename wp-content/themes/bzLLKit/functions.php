@@ -218,33 +218,6 @@ function bz_body_classes( $classes ) {
 add_filter( 'body_class', 'bz_body_classes' );
 
 /**
- * Converts a HEX value to RGB.
- *
- * @since LL Kit 1.0
- *
- * @param string $color The original color, in 3- or 6-digit hexadecimal form.
- * @return array Array containing RGB (red, green, and blue) values for the given
- *               HEX code, empty array otherwise.
- */
-function bz_hex2rgb( $color ) {
-	$color = trim( $color, '#' );
-
-	if ( strlen( $color ) === 3 ) {
-		$r = hexdec( substr( $color, 0, 1 ).substr( $color, 0, 1 ) );
-		$g = hexdec( substr( $color, 1, 1 ).substr( $color, 1, 1 ) );
-		$b = hexdec( substr( $color, 2, 1 ).substr( $color, 2, 1 ) );
-	} else if ( strlen( $color ) === 6 ) {
-		$r = hexdec( substr( $color, 0, 2 ) );
-		$g = hexdec( substr( $color, 2, 2 ) );
-		$b = hexdec( substr( $color, 4, 2 ) );
-	} else {
-		return array();
-	}
-
-	return array( 'red' => $r, 'green' => $g, 'blue' => $b );
-}
-
-/**
  * Add custom image sizes attribute to enhance responsive image functionality
  * for content images
  *
@@ -328,6 +301,7 @@ function bz_register_kit() {
 
 }
 add_action( 'init', 'bz_register_kit', 0 );
+
 // Activity:
 function bz_register_activity() {
 
@@ -380,7 +354,7 @@ function bz_register_activity() {
 	register_post_type( 'activity', $args );
 }
 add_action( 'init', 'bz_register_activity', 0 );
-// Custom content:
+// Custom content (for things we'd like to edit like the footer text, copyright notice, etc.):
 function bz_register_custom_content() {
 
 	$labels = array(
@@ -442,15 +416,87 @@ add_action( 'init', 'bz_register_custom_content', 0 );
 /**/
 
 add_filter( 'rwmb_meta_boxes', 'bz_meta_boxes' );
+// Need a few of these elsewhere so creating globally accesible arrays:
 $bz_scopes = array(
 					 	'cohort' => __('Cohort', 'bz'),
 					 	'pairs' => __('Pairs/Triads', 'bz'),
 					 	'ind' => __('Individuals', 'bz'),
 					 	'all' => __('All Cohorts', 'bz'),
 					 );
-global $bz_scopes;
+$bz_logistics = array(
+		'bz_kit_audience' => array(
+			 'name' => __( 'Audience', 'bz' ),
+			 'type' => 'wysiwyg',
+		),
+		'bz_kit_expectations' => array(
+			 'name' => __( 'Expectations', 'bz' ),
+			 'type' => 'wysiwyg',
+		),
+		'bz_kit_space' => array(
+			 'name' => __( 'Space', 'bz' ),
+			 'type' => 'wysiwyg',
+		),
+		'bz_kit_facilitators' => array(
+			 'name' => __( 'Facilitators', 'bz' ),
+			 'type' => 'wysiwyg',
+		),
+		'bz_kit_guests' => array(
+			 'name' => __( 'Guests', 'bz' ),
+			 'type' => 'wysiwyg',
+		),
+);
+$bz_logistics_fields;
+foreach ($bz_logistics as $bzlk => $bzlv) {
+	$bz_logistics_fields[] = array (
+		'id' => $bzlk,
+		'name' => $bzlv['name'],
+		'type' => $bzlv['type'],
+	);
+}
+$bz_staff_tasks = array(
+	'bz_kit_logistics_3m' => array(
+		 'name' => __( '3+ months out', 'bz' ),
+		 'type' => 'wysiwyg',
+	),
+	'bz_kit_logistics_1m' => array(
+		 'name' => __( '1 month out', 'bz' ),
+		 'type' => 'wysiwyg',
+	),
+	'bz_kit_logistics_3w' => array(
+		 'name' => __( '3 weeks out', 'bz' ),
+		 'type' => 'wysiwyg',
+	),
+	'bz_kit_logistics_2w' => array(
+		 'name' => __( '2 weeks out', 'bz' ),
+		 'type' => 'wysiwyg',
+	),
+	'bz_kit_logistics_1w' => array(
+		 'name' => __( '1 week out', 'bz' ),
+		 'type' => 'wysiwyg',
+	),
+	'bz_kit_logistics_day-of' => array(
+		 'name' => __( 'Day of', 'bz' ),
+		 'type' => 'wysiwyg',
+	),
+	'bz_kit_logistics_day-after' => array(
+		 'name' => __( 'Right after', 'bz' ),
+		 'type' => 'wysiwyg',
+	),
+);
+$bz_staff_tasks_fields;
+foreach ($bz_staff_tasks as $bzstk => $bzstv) {
+	$bz_staff_tasks_fields[] = array (
+		'id' => $bzstk,
+		'name' => $bzstv['name'],
+		'type' => $bzstv['type'],
+	);
+}
+// Now let's make the boxes:
 function bz_meta_boxes( $meta_boxes ) {
-    $meta_boxes[] = array(
+	global $bz_scopes;
+	global $bz_logistics_fields;
+	global $bz_staff_tasks_fields;
+	$meta_boxes[] = array(
         'title'      => __( 'Activity Attributes', 'bz' ),
         'post_types' => 'activity',
         'fields'     => array(
@@ -469,8 +515,22 @@ function bz_meta_boxes( $meta_boxes ) {
     );
 	 $meta_boxes[] = array(
         'title'      => __( 'Kit Attributes', 'bz' ),
-        'post_types' => 'kit',
+        'post_types' => array ('kit'),
         'fields'     => array(
+            array(
+                'id'   => 'bz_kit_type',
+                'name' => __( 'Kit Type', 'bz' ),
+                'type' => 'radio',
+					 'options' => array(
+					 	'll' => __('Learning Lab (default)', 'bz'),
+					 	'workshop' => __('Workshop (such as Public Narrative)', 'bz'),
+					 ),
+            ),
+				array(
+                'id'   => 'bz_kit_vision',
+                'name' => __( 'Vision', 'bz' ),
+                'type' => 'wysiwyg',
+            ),
             array(
                 'id'   => 'bz_kit_outcomes',
                 'name' => __( 'Fellows Will... (please use bullet list)', 'bz' ),
@@ -493,10 +553,42 @@ function bz_meta_boxes( $meta_boxes ) {
             ),
         ),
     );
+	 $meta_boxes[] = array(
+       'title'      => __( 'Activities', 'bz' ),
+       'post_types' => array ('kit'),
+       'fields'     => array(
+			 	array(
+                'id'   => 'bz_kit_agenda',
+                'name' => __( 'Make an ordered list of links to the activities you wish to include in this kit.', 'bz' ),
+                'type' => 'wysiwyg',
+   	      ),
+		 ),
+    );
+	 $meta_boxes[] = array(
+        'title'      => __( 'Logistical Information', 'bz' ),
+        'post_types' => array ('kit'),
+        'fields'     => $bz_logistics_fields,
+    );
+	 $meta_boxes[] = array(
+		'title'      => __( 'What Staff Needs To Do', 'bz' ),
+		'post_types' => array ('kit'),
+		'fields'     => $bz_staff_tasks_fields,
+	);
+	 $meta_boxes[] = array(
+        'title'      => __( 'Appendix', 'bz' ),
+        'post_types' => array ('kit'),
+        'fields'     => array(
+            array(
+                'id'   => 'bz_kit_appendix',
+                'name' => __( 'This will appear at the end of the kit.', 'bz' ),
+                'type' => 'wysiwyg',
+            ),
+        ),
+    );
     return $meta_boxes;
 }
 
-// Register Custom Taxonomy
+/* Register Custom Taxonomy: */
 function bz_generate_materials_tax() {
 
 	$labels = array(
@@ -590,11 +682,16 @@ function bz_mce_before_init_insert_formats( $init_array ) {
 // Attach callback to 'tiny_mce_before_init' 
 add_filter( 'tiny_mce_before_init', 'bz_mce_before_init_insert_formats' );
 
-/* Figure out week numbers based on published kits */
-function bz_calculate_kit_number() {
+
+/* Generate a prefix for LL titles to show week number: */
+
+
+// collect post IDs in a global array for all the kits that are LLs (or are not defined as anything else):
+$only_lls = only_lls();
+function only_lls(){
 	global $post;
-	$current_kit = $post->ID;
-	$counter = 0;
+	$only_lls = array();
+	// get all kits using this sub-query:
 	$cargs = array (
 		'post_type'              => 'kit',
 		'post_status'            => 'publish',
@@ -607,14 +704,30 @@ function bz_calculate_kit_number() {
 	if ( $ckits->have_posts() ) { 
 		while ( $ckits->have_posts() ) { 
 			$ckits->the_post();
-			$counter ++;			
-			if ($current_kit == $post->ID) {
-				return $counter;
+			$kit_type = get_post_custom_values('bz_kit_type', $post->ID);
+			if ( $kit_type == 'll' || empty($kit_type)  )  {
+				$only_lls[] = $post->ID;	
 			}
 		}
-	} else {
-		// no posts found
 	}
-	// Restore original Post Data
-	wp_reset_postdata();	
+	return $only_lls;	
 }
+// Create a "filter" that adds the LL number to relevant kits:
+function bz_kit_title_prefix($title) {
+	global $post;
+	global $only_lls;
+
+	$counter = 0;
+	
+	foreach ($only_lls as $ll) {
+		$counter ++;
+		if ($ll == $post->ID) {
+			$title = __('Learning Lab ','bz').$counter.': '.$title;
+		} 
+	} 
+	return $title;
+
+}
+add_filter('the_title', 'bz_kit_title_prefix');
+
+/**/
