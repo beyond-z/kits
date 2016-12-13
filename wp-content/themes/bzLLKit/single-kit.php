@@ -55,12 +55,22 @@ get_header(); ?>
 	foreach ($kit_level_materials as $kit_level_material) {
 		$materials[$kit_level_material->slug] = $kit_level_material;
 	}
-			
-	// Get the activities linked from the kit's agenda list:
-	$activity_posts = array();
-	if (!empty($customfields['bz_kit_agenda'])){ 
+	
+	if (!empty($customfields['bz_kit_agenda'])) {
+		// Get the activities linked from the kit's agenda list:
+		$activity_posts = array();
+		$activity_links = array();
+		$list_of_links = $customfields['bz_kit_agenda'][0];
+	
 		// make an array of clean urls:
-		$activity_links = preg_split('/\s+/', trim( strip_tags( $customfields['bz_kit_agenda'][0]) ) );
+		$dom = new DOMDocument;
+		$dom->loadHTML($list_of_links);
+		$xpath = new DOMXPath($dom);
+		$nodes = $xpath->query('//a/@href');
+		foreach($nodes as $href) {
+			 $activity_links[] = $href->nodeValue;
+		}
+
 		foreach ($activity_links as $activity_link) {
 			// Get the post data into our array, if it is a valid id (url_to_postid returns 0 if not)
 			// NOTE: this is not very efficient, because we're using get_post query the DB several times. 
@@ -69,60 +79,58 @@ get_header(); ?>
 			$activity_id = url_to_postid($activity_link);
 			if ($activity_id) $activity_posts[] = get_post($activity_id);
 		}
-	} 
-	
-	if (!empty($activity_posts)) {
-	
-		// Init generating the agenda timetable
-		$dt = DateTime::createFromFormat('H:i', '18:00'); 
-			// of course at some point we should make this NOT HARDCODED! e.g. draw the start time from the CMS or LMS...
-		$dtadjust = get_post_custom_values('bz_kit_start_time_adjust', $post->ID);
-		if ($dtadjust[0] < 0) {
-			$dt->sub(new DateInterval('PT'.abs($dtadjust[0]).'M'));
-		} else if ($dtadjust[0] > 0) {
-			$dt->add(new DateInterval('PT'.$dtadjust[0].'M'));
-		}		
+		if (!empty($activity_posts)) {
 		
-		echo '<h2>'.__('Agenda','bz').'</h2>';	?>
-		
-		<table class="agenda">
-			<?php 
-			foreach ($activity_posts as $activity_post) { 
-				if ($activity_post->post_status == 'publish') { ?>
-					<tr>
-						<td>
-							<?php 
-							$activity_duration = get_post_meta( $activity_post->ID, 'bz_activity_attributes_minutes', 'true' );
-							// show start time and add minutes from this activity
-							// forcing (int)$activity_duration to convert empties to zeros.
-							echo $dt->format('g:i a');
-							$dt->add(new DateInterval('PT'.(int)$activity_duration.'M'));           
-							?>
-						</td>
-						<td>
-							<a href="<?php echo '#'.$activity_post->post_name; ?>">
-								<span class="activity-name"><?php echo $activity_post->post_title; ?></span>
-							</a>
-							<span class="duration">(<?php echo $activity_duration;?>)</span>
-							<br />
-							<span class="activity-desc"><?php echo apply_filters('the_content', $activity_post->post_excerpt);?></span>
-						</td>
-					</tr>
-					<?php
-					$activity_materials = wp_get_object_terms( $activity_post->ID, 'material');
-					if (!empty($activity_materials)) {
-						foreach ($activity_materials as $activity_material) {
-							$materials[$activity_material->slug] = $activity_material;
+			// Init generating the agenda timetable
+			$dt = DateTime::createFromFormat('H:i', '18:00'); 
+				// of course at some point we should make this NOT HARDCODED! e.g. draw the start time from the CMS or LMS...
+			$dtadjust = get_post_custom_values('bz_kit_start_time_adjust', $post->ID);
+			if ($dtadjust[0] < 0) {
+				$dt->sub(new DateInterval('PT'.abs($dtadjust[0]).'M'));
+			} else if ($dtadjust[0] > 0) {
+				$dt->add(new DateInterval('PT'.$dtadjust[0].'M'));
+			}		
+			
+			echo '<h2>'.__('Agenda','bz').'</h2>';	?>
+			
+			<table class="agenda">
+				<?php 
+				foreach ($activity_posts as $activity_post) { 
+					if ($activity_post->post_status == 'publish') { ?>
+						<tr>
+							<td>
+								<?php 
+								$activity_duration = get_post_meta( $activity_post->ID, 'bz_activity_attributes_minutes', 'true' );
+								// show start time and add minutes from this activity
+								// forcing (int)$activity_duration to convert empties to zeros.
+								echo $dt->format('g:i a');
+								$dt->add(new DateInterval('PT'.(int)$activity_duration.'M'));           
+								?>
+							</td>
+							<td>
+								<a href="<?php echo '#'.$activity_post->post_name; ?>">
+									<span class="activity-name"><?php echo $activity_post->post_title; ?></span>
+								</a>
+								<span class="duration">(<?php echo $activity_duration;?>)</span>
+								<br />
+								<span class="activity-desc"><?php echo apply_filters('the_content', $activity_post->post_excerpt);?></span>
+							</td>
+						</tr>
+						<?php
+						$activity_materials = wp_get_object_terms( $activity_post->ID, 'material');
+						if (!empty($activity_materials)) {
+							foreach ($activity_materials as $activity_material) {
+								$materials[$activity_material->slug] = $activity_material;
+							}
 						}
-					}
-				} // end if ($activity_post->post_status == 'publish')
-			} // end foreach 
-			?>
-		</table>
-	<?php  
+					} // end if ($activity_post->post_status == 'publish')
+				} // end foreach 
+				?>
+			</table>
+		<?php  
 	
-	}	// end if (!empty($activity_posts))
-	
+		}	// end if (!empty($activity_posts))
+	} // end if (!empty(customfields['bz_kit_agenda']))
 	?>
 	
 	<?php

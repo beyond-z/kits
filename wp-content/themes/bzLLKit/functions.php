@@ -703,9 +703,10 @@ function only_lls(){
 	$ckits = new WP_Query( $cargs );
 	if ( $ckits->have_posts() ) { 
 		while ( $ckits->have_posts() ) { 
+			// for each query result, test whether it's a LL or blank, and if so add it to the array:
 			$ckits->the_post();
 			$kit_type = get_post_custom_values('bz_kit_type', $post->ID);
-			if ( $kit_type == 'll' || empty($kit_type)  )  {
+			if ( $kit_type[0] == 'll' || empty($kit_type)  )  {
 				$only_lls[] = $post->ID;	
 			}
 		}
@@ -714,17 +715,20 @@ function only_lls(){
 }
 // Create a "filter" that adds the LL number to relevant kits:
 function bz_kit_title_prefix($title) {
-	global $post;
+	$currentID = get_the_ID();
 	global $only_lls;
-
 	$counter = 0;
 	
-	foreach ($only_lls as $ll) {
-		$counter ++;
-		if ($ll == $post->ID) {
-			$title = __('Learning Lab ','bz').$counter.': '.$title;
+	// only apply to user-facing pages:
+	if (is_home() || is_single()) {
+		// find a match with the list of LLs we've compiled:
+		foreach ($only_lls as $ll) {
+			$counter ++;
+			if ($ll == $currentID) {
+				$title = __('Learning Lab ','bz').$counter.': '.$title;
+			} 
 		} 
-	} 
+	}
 	return $title;
 
 }
