@@ -316,12 +316,22 @@ h2 {
 	font-size: 20px;
 	margin-top: 40px;
 }
+table caption {
+	text-align: left;
+	padding-left: 10px;	
+}
 .site-inner {
-	width: 90%;
 	margin: 0 auto;
 }
 .site-inner > *  {
-	padding: 20px;
+	padding: 0px;
+}
+.kit-component,
+.site-main > p {
+	padding: 10px;
+}
+.sub-activities {
+	padding: 0;	
 }
 a {
 	text-decoration: none;
@@ -360,24 +370,28 @@ a:hover {
 .activity {
 	position: relative;
 	margin: 0;
-	padding: 2em 0;
 	border-top: solid 1px #000;
+	background: #C4E7E7;
+}
+.activity:last-child {
+	border-bottom: solid 1px #000;	
 }
 .activity header {
 	position: relative;
+	background: #EBF7F7;	
+}
+.activity-outcomes {
+	background: #D7EFEF;
 }
 .activity header:after {
 	content: "\2715";
 	position: absolute;
-	right: 0;
+	right: 10px;
+	top: 12px;
 	padding: 1px;
 	border-radius: 20px;
 	line-height: 1;
-	background-color: #FBFBFB;
 	transition: all 0.3s;
-}
-.activity header:hover:after {
-	background: #D7EFEF;
 }
 .activity header:active:after {
 	background: #9AD7D7;
@@ -393,22 +407,30 @@ a:hover {
 .activity header:hover {
 	cursor: n-resize;	
 }
-.activity > * {
-	margin-left: 30px;		
-}
-.activity .duration {
-	position: absolute;
-	left: -30px;
-	top: 0;
-}
 .activity-outcomes {
 	font-style: italic;	
 }
 .activity-content ul {
-	padding-left: 1em;	
+	padding-left: 10px;
+}
+.sub-activities h2,
+.activity > header,
+.activity-outcomes,
+.activity-content > *,
+.activity > footer {
+	padding: 10px;
+	margin: 0;
+}
+.activity-content > *:first-child {
+	margin-top: 0;		
+}
+.activity-content > *:last-child {
+	margin-bottom: 0;	
 }
 .activity-content ul li {
   list-style: none;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 .activity-content ul li:before {
   content: '\2022';
@@ -425,7 +447,7 @@ a:hover {
 	font-style: italic;
 	position: relative;
 	padding: 8px;
-	margin: 10px 20% 10px 8px;
+	margin: 10px;
 	background: #FFF;
 	-webkit-border-radius: 4px;
 	-moz-border-radius: 4px;
@@ -472,7 +494,7 @@ a:hover {
 	position: absolute;
 	bottom: 0px;
 	left: 0px;
-	padding: 15px 5px;
+	padding: 10px;
 	color: #FFF;	
 }
 .kit-masthead h1,
@@ -496,13 +518,16 @@ a:hover {
 	position: relative;
 	left: -50%;
 }
+.activity-content {
+	border-left: #9AD7D7 10px solid;	
+}
 .activity .core {
-	padding: 5px;
-	border: 2px solid #EB3B46;	
+	border-left: #EB3B46 solid 10px;
+	position: relative;
+	left: -10px;
 }
 .activity .scope {
 	color: #ACACAC;
-	margin: 0 0.5em;
 }
 [tabindex="-1"] {
 	outline:none;
@@ -548,6 +573,11 @@ a:hover {
 	position: absolute;
 	right: 0;
 	bottom: 0;
+}
+@media screen and (min-width: 769px) {
+	.site-inner {
+		width: 768px;	
+	}
 }
 @media print {
 	body,
