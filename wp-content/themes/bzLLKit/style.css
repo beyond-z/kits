@@ -292,9 +292,14 @@ body {
 	font-family: Georgia, serif;
 	line-height: 1.2em;
 }
+.site-inner {
+	position: relative;
+}
 #masthead {
-	height: 1.5em;
 	padding: 0 20px;
+}
+#agenda {
+	display: none;	
 }
 h1,h2,h3,h4,h5,h6,
 th,
@@ -314,7 +319,8 @@ th,
 }
 h2 {
 	font-size: 20px;
-	margin-top: 40px;
+	margin: 10px 0;
+	position: relative;
 }
 table caption {
 	text-align: left;
@@ -326,9 +332,9 @@ table caption {
 .site-inner > *  {
 	padding: 0px;
 }
-.kit-component,
-.site-main > p {
+.kit-component {
 	padding: 10px;
+	border-bottom: 1px solid #333;
 }
 .sub-activities {
 	padding: 0;	
@@ -361,29 +367,23 @@ a:hover {
 .agenda td:first-child {
 	width: 80px;	
 }
-#activity-plan-header {
-	margin-top: 3em;	
-}
 .activity-desc {
 	font-style:italic;
 }
 .activity {
 	position: relative;
 	margin: 0;
-	border-top: solid 1px #000;
-	background: #C4E7E7;
-}
-.activity:last-child {
-	border-bottom: solid 1px #000;	
+	border-top: solid 1px #CCC;
 }
 .activity header {
 	position: relative;
 	background: #EBF7F7;	
 }
 .activity-outcomes {
-	background: #D7EFEF;
+	background: #EBF7F7;
 }
-.activity header:after {
+.activity header:after,
+.collapsible:after {
 	content: "\2715";
 	position: absolute;
 	right: 10px;
@@ -393,10 +393,14 @@ a:hover {
 	line-height: 1;
 	transition: all 0.3s;
 }
+.collapsible:after {
+	top: 0;	
+}
 .activity header:active:after {
 	background: #9AD7D7;
 }
-.activity header.collapsed:after{
+.collapsible.collapsed:after,
+.activity header.collapsed:after {
    -webkit-transform: rotate(-45deg);
    -moz-transform: rotate(-45deg);
    -ms-transform: rotate(-45deg);
@@ -404,7 +408,8 @@ a:hover {
    transform: rotate(-45deg);
    zoom: 1;
 }
-.activity header:hover {
+.activity header:hover,
+.collapsible:hover {
 	cursor: n-resize;	
 }
 .activity-outcomes {
@@ -421,6 +426,9 @@ a:hover {
 	padding: 10px;
 	margin: 0;
 }
+.sub-activities > h2 {
+	margin: 10px 0;	
+}
 .activity-content > *:first-child {
 	margin-top: 0;		
 }
@@ -428,19 +436,7 @@ a:hover {
 	margin-bottom: 0;	
 }
 .activity-content ul li {
-  list-style: none;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-.activity-content ul li:before {
-  content: '\2022';
-  display: block;
-  position: relative;
-  max-width: 0;
-  max-height: 0;
-  left: -0.75em;
-  top: 0;
-  color: #DDD;
+	margin: 0 0 0 20px;
 }
 .activity blockquote {
 	line-height: normal;
@@ -448,11 +444,10 @@ a:hover {
 	position: relative;
 	padding: 8px;
 	margin: 10px;
-	background: #FFF;
+	background: #EEE;
 	-webkit-border-radius: 4px;
 	-moz-border-radius: 4px;
 	border-radius: 4px;
-	border: #9AD7D7 solid 1px;
 }
 .activity blockquote p {
 	margin: 0;	
@@ -462,25 +457,12 @@ a:hover {
 	position: absolute;
 	border-style: solid;
 	border-width: 8px 8px 8px 0;
-	border-color: transparent #FFF;
+	border-color: transparent #EEE;
 	display: block;
 	width: 0;
 	z-index: 1;
 	margin-top: -8px;
 	left: -6px;
-	top: 50%;
-}
-.activity blockquote:before {
-	content: '';
-	position: absolute;
-	border-style: solid;
-	border-width: 8px 8px 8px 0;
-	border-color: transparent #9AD7D7;
-	display: block;
-	width: 0;
-	z-index: 0;
-	margin-top: -8px;
-	left: -8px;
 	top: 50%;
 }
 .activity li {
@@ -495,6 +477,7 @@ a:hover {
 	bottom: 0px;
 	left: 0px;
 	padding: 10px;
+	margin-bottom: 7px;
 	color: #FFF;	
 }
 .kit-masthead h1,
@@ -514,17 +497,27 @@ a:hover {
 	-webkit-filter:brightness(50%)  sepia(75%);
 	filter:brightness(50%) sepia(75%);
 }
-.kit-header .bkg img {
-	position: relative;
-	left: -50%;
+.site-branding {
+	position: absolute;
+	right: 0px;
+	top: 0px;
+	z-index: 9;
+}
+.site-branding a {
+	color: #FFF;
+	padding: 10px;
 }
 .activity-content {
-	border-left: #9AD7D7 10px solid;	
+	border-left: transparent 10px solid;	
+	margin: 20px 0;
 }
 .activity .core {
 	border-left: #EB3B46 solid 10px;
 	position: relative;
 	left: -10px;
+}
+.activity .duration {
+	font-size: 0.75em;	
 }
 .activity .scope {
 	color: #ACACAC;
@@ -616,6 +609,7 @@ a:hover {
 	.activity blockquote {
 		width: 70%;
 		margin-left: 0;
+		border: 1px solid #CCC;
 	}
 	.with-notes .activity blockquote {
 		width: calc(100% - 2em);  
