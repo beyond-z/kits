@@ -72,7 +72,7 @@ function bz_setup() {
 	add_theme_support( 'post-thumbnails' );
 	set_post_thumbnail_size( 1200, 9999 );
 	add_image_size( 'list', 220, 145, true);
-	add_image_size( 'header', 2000, 250, array('center','center'));
+	add_image_size( 'header', 768, 360, array ('center', 'center') );
 
 	// This theme uses wp_nav_menu() in two locations.
 	register_nav_menus( array(
