@@ -1780,15 +1780,23 @@ class UpdraftPlus_Admin {
 		global $updraftplus;
 	
 		if ($rescan) $messages = $updraftplus->rebuild_backup_history($remotescan);
-
 		$backup_history = UpdraftPlus_Options::get_updraft_option('updraft_backup_history');
 		$backup_history = (is_array($backup_history)) ? $backup_history : array();
 		$output = $this->existing_backup_table($backup_history);
+		$data = array();
 
 		if (!empty($messages) && is_array($messages)) {
 			$noutput = '<div style="margin-left: 100px; margin-top: 10px;"><ul style="list-style: disc inside;">';
 			foreach ($messages as $msg) {
-				$noutput .= '<li>'.(($msg['desc']) ? $msg['desc'].': ' : '').'<em>'.$msg['message'].'</em></li>';
+				$noutput .= '<li>'.(empty($msg['desc']) ? '' : $msg['desc'].': ').'<em>'.$msg['message'].'</em></li>';
+				if (!empty($msg['data'])) {
+					if (!empty($msg['desc'])) {
+						$data['desc'] = $msg['data'];
+					} else {
+						// At the time of authorship, this code branch is not known to be used
+						$data[] = $msg['data'];
+					}
+				}
 			}
 			$noutput .= '</ul></div>';
 			$output = $noutput.$output;
@@ -1803,6 +1811,7 @@ class UpdraftPlus_Admin {
 		return apply_filters('updraftplus_get_history_status_result', array(
 			'n' => sprintf(__('Existing Backups', 'updraftplus').' (%d)', count($backup_history)),
 			't' => $output,
+			'data' => $data,
 			'cksum' => md5($output),
 			'logs_exist' => $logs_exist,
 		));

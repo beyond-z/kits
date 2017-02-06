@@ -187,8 +187,8 @@ class UpdraftPlus_BackupModule_dropbox {
 
 			// We don't actually abort now - there's no harm in letting it try and then fail
 			if ($available_quota != -1 && $available_quota < ($filesize-$offset)) {
-				$updraftplus->log("File upload expected to fail: file data remaining to upload ($file) size is ".($filesize-$offset)." b (overall file size; $filesize b), whereas available quota is only $available_quota b");
-				$updraftplus->log(sprintf(__("Account full: your %s account has only %d bytes left, but the file to be uploaded has %d bytes remaining (total size: %d bytes)",'updraftplus'),'Dropbox', $available_quota, $filesize-$offset, $filesize), 'error');
+				$updraftplus->log("File upload expected to fail: file data remaining to upload ($file) size is ".($filesize-$offset)." b (overall file size; .".($filesize*1024)." b), whereas available quota is only $available_quota b");
+// 				$updraftplus->log(sprintf(__("Account full: your %s account has only %d bytes left, but the file to be uploaded has %d bytes remaining (total size: %d bytes)",'updraftplus'),'Dropbox', $available_quota, $filesize-$offset, $filesize), 'warning');
 			}
 
 			// Old-style, single file put: $put = $dropbox->putFile($updraft_dir.'/'.$file, $dropbox_folder.$file);
@@ -290,7 +290,9 @@ class UpdraftPlus_BackupModule_dropbox {
 			$search = $dropbox->search($match, $searchpath);
 		} catch (Exception $e) {
 			$updraftplus->log('Dropbox error: '.$e->getMessage().' (line: '.$e->getLine().', file: '.$e->getFile().')');
-			return new WP_Error('search_error', $e->getMessage());
+			// The most likely cause of a search_error is specifying a non-existent path, which should just result in an empty result set.
+// 			return new WP_Error('search_error', $e->getMessage());
+			return array();
 		}
 
 		if (empty($search['code']) || 200 != $search['code']) return new WP_Error('response_error', sprintf(__('%s returned an unexpected HTTP response: %s', 'updraftplus'), 'Dropbox', $search['code']), $search['body']);

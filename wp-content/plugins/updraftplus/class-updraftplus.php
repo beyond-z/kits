@@ -2335,7 +2335,7 @@ class UpdraftPlus {
 		# TODO: Make compatible with incremental naming
 		if ($remotescan) {
 			add_action('http_request_args', array($this, 'modify_http_options'));
-			foreach ($this->backup_methods as $method => $desc) {
+			foreach ($this->backup_methods as $method => $method_description) {
 				require_once(UPDRAFTPLUS_DIR.'/methods/'.$method.'.php');
 				$objname = 'UpdraftPlus_BackupModule_'.$method;
 				$obj = new $objname;
@@ -2359,9 +2359,10 @@ class UpdraftPlus {
 						if ('no_settings' == $code || 'no_addon' == $code || 'insufficient_php' == $code || 'no_listing' == $code) continue;
 						$messages[] = array(
 							'method' => $method,
-							'desc' => $desc,
+							'desc' => $method_description,
 							'code' => $code,
-							'message' => $files->get_error_message($code)
+							'message' => $files->get_error_message($code),
+							'data' => $files->get_error_data($code),
 						);
 					}
 				}
