@@ -426,6 +426,9 @@ a:hover {
 	padding: 10px;
 	margin: 0;
 }
+.activity-outcomes p {
+	margin: 0;
+}
 .sub-activities > h2 {
 	margin: 10px 0;	
 }
@@ -516,11 +519,13 @@ a:hover {
 	position: relative;
 	left: -10px;
 }
-.activity .duration {
+.activity .duration,
+.activity .scope {
 	font-size: 0.75em;	
 }
 .activity .scope {
 	color: #ACACAC;
+  margin-left: 0.5em;
 }
 [tabindex="-1"] {
 	outline:none;
@@ -579,6 +584,9 @@ a:hover {
 	blockquote {
 		font-size: 9pt;
 	}
+	.site-inner {
+		margin: 0 15%;
+	}
 	.entry-footer, 
 	.activity-footer,
 	#masthead {
@@ -595,9 +603,11 @@ a:hover {
 	h2 {
 		font-size: 14pt;
 		margin: 16pt 0 8pt;
+		page-break-after: avoid;
 	}
 	h3 {
 		font-size: 11pt;
+		page-break-after: avoid;
 	}
 	#activity-plan-header, 
 	.with-notes .activity-content:after {
@@ -605,6 +615,25 @@ a:hover {
 	}
 	.btn {
 		display: none;
+	}
+	.activity-content ul,
+	.activity-content ol,
+	.activity-content p,
+	.activity-content blockquote {
+		page-break-inside: avoid;
+	}
+	.activity-content ul,
+	.activity-content ol {
+		page-break-before: avoid;
+	}
+	.kit-component {
+		page-break-inside: avoid;
+	}
+	.activity-header .duration {
+		page-break-after: avoid;
+	}
+	.kit-component.sub-activities {
+		page-break-before:always;
 	}
 	.activity blockquote {
 		width: 70%;
@@ -624,10 +653,15 @@ a:hover {
 	.activity-header:after {
 		color: #DDD;	
 	}
+	.activity-outcomes p {
+		margin: 0;
+	}
+	a[href^="http"] {
+		color: inherit;
+	}
 	a[href^="http"]:after{
 		content:" (" attr(href) ")";
 		display: inline;
 		white-space: normal;
-		color: #666;
 	}
 }

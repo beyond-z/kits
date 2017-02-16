@@ -3,6 +3,7 @@ wp-config.php
 
 # Server specific files
 .htaccess
+php.ini
 favicon.ico
 
 # This file is added on Mac's for the Finder app

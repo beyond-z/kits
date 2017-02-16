@@ -15,7 +15,11 @@
 				<?php 
 				$copyrightID = 175;
 				$copyright = get_post($copyrightID);
-				echo apply_filters('the_content', $copyright->post_content);
+				if ($copyright['post_content']) { 
+					echo apply_filters('the_content', $copyright['post_content']);
+				} else {
+					echo __('&copy; Braven, Inc. All rights reserved.', 'bz');
+				}
 				?>
 			</p>
 		</footer><!-- .site-footer -->
