@@ -155,7 +155,7 @@ get_header(); ?>
 	
 	<?php
 	if (!empty($customfields['bz_kit_prework'])){ ?>
-		<div class="kit-component prework">
+		<div class="kit-component prework start-collapsed">
 			<h2><?php echo __('Fellows\' Prework', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_prework'][0]);?>
 		</div> <?php
@@ -165,7 +165,7 @@ get_header(); ?>
 	<?php
 	
 	if (!empty($materials)) { ?>
-		<div class="kit-component materials">
+		<div class="kit-component materials start-collapsed">
 			<h2><?php echo __('Materials','bz'); ?></h2>
 			<ul>
 				<?php foreach ($materials as $material) { ?>
@@ -180,15 +180,6 @@ get_header(); ?>
 			</ul>
 		</div>
 	<?php } // end if (!empty($materials)) ?>
-	
-	<?php
-	if (!empty($customfields['bz_kit_important'])){ ?>
-		<div class="kit-component important">
-			<h2><?php echo __('What\'s most important', 'bz'); ?></h2>
-			<?php echo apply_filters('the_content',$customfields['bz_kit_important'][0]);?>
-		</div> <?php
-	} 
-	?>
 	
 	<?php 
 	// Iterate through logistics fields if there are any
@@ -228,6 +219,16 @@ get_header(); ?>
 			?>
 		</div>
 	<?php } ?>
+  
+  <?php
+	if (!empty($customfields['bz_kit_important'])){ ?>
+		<div class="kit-component important">
+			<h2><?php echo __('What\'s most important', 'bz'); ?></h2>
+			<?php echo apply_filters('the_content',$customfields['bz_kit_important'][0]);?>
+		</div> <?php
+	} 
+	?>
+  
 	<?php 
 	// query full activity content and display it:
 
@@ -271,6 +272,16 @@ get_header(); ?>
 			<?php } // end foreach */ ?>
 		</div>
 	<?php } //!empty($activity_posts)  ?>
+  
+	<?php
+	if (!empty($customfields['bz_kit_after'])){ ?>
+		<div class="kit-component important">
+			<h2><?php echo __('After Learning Lab', 'bz'); ?></h2>
+			<?php echo apply_filters('the_content',$customfields['bz_kit_after'][0]);?>
+		</div> <?php
+	} 
+	?>
+  
 	<?php
 	
 	if (!empty($customfields['bz_kit_appendix'])){ ?>

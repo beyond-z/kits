@@ -497,95 +497,100 @@ function bz_meta_boxes( $meta_boxes ) {
 	global $bz_logistics_fields;
 	global $bz_staff_tasks_fields;
 	$meta_boxes[] = array(
-        'title'      => __( 'Activity Attributes', 'bz' ),
-        'post_types' => 'activity',
-        'fields'     => array(
-            array(
-                'id'   => 'bz_activity_attributes_minutes',
-                'name' => __( 'Minutes', 'bz' ),
-                'type' => 'number',
-            ),
-				array(
-                'id'   => 'bz_activity_attributes_group_scope',
-                'name' => __( 'Group Scope', 'bz' ),
-                'type' => 'radio',
-					 'options' => $bz_scopes
-            ),
-        ),
-    );
-	 $meta_boxes[] = array(
-        'title'      => __( 'Kit Attributes', 'bz' ),
-        'post_types' => array ('kit'),
-        'fields'     => array(
-            array(
-                'id'   => 'bz_kit_type',
-                'name' => __( 'Kit Type', 'bz' ),
-                'type' => 'radio',
-					 'options' => array(
-					 	'll' => __('Learning Lab (default)', 'bz'),
-					 	'workshop' => __('Workshop (such as Public Narrative)', 'bz'),
-					 ),
-            ),
-				array(
-                'id'   => 'bz_kit_vision',
-                'name' => __( 'Vision', 'bz' ),
-                'type' => 'wysiwyg',
-            ),
-            array(
-                'id'   => 'bz_kit_outcomes',
-                'name' => __( 'Fellows Will... (please use bullet list)', 'bz' ),
-                'type' => 'wysiwyg',
-            ),
-				array(
-                'id'   => 'bz_kit_important',
-                'name' => __( 'What is most important (please use bullets; begin with a term in bold, followed by &ldquo;&nbsp;&ndash;&nbsp;&rdquo;', 'bz' ),
-                'type' => 'wysiwyg',
-            ),
-				array(
-                'id'   => 'bz_kit_prework',
-                'name' => __( 'Fellows&#39;s Pre-work (please use bullet list)', 'bz' ),
-                'type' => 'wysiwyg',
-            ),
-            array(
-                'id'   => 'bz_kit_start_time_adjust',
-                'name' => __( 'Start time adjustment (e.g. -30 means the first activity starts 30 minutes ahead of usual start time)', 'bz' ),
-                'type' => 'text',
-            ),
-        ),
-    );
-	 $meta_boxes[] = array(
-       'title'      => __( 'Activities', 'bz' ),
-       'post_types' => array ('kit'),
-       'fields'     => array(
-			 	array(
-                'id'   => 'bz_kit_agenda',
-                'name' => __( 'Make an ordered list of links to the activities you wish to include in this kit.', 'bz' ),
-                'type' => 'wysiwyg',
-   	      ),
-		 ),
-    );
-	 $meta_boxes[] = array(
-        'title'      => __( 'Logistical Information', 'bz' ),
-        'post_types' => array ('kit'),
-        'fields'     => $bz_logistics_fields,
-    );
-	 $meta_boxes[] = array(
+		'title'      => __( 'Activity Attributes', 'bz' ),
+		'post_types' => 'activity',
+		'fields'     => array(
+			array(
+				'id'   => 'bz_activity_attributes_minutes',
+				'name' => __( 'Minutes', 'bz' ),
+				'type' => 'number',
+			),
+			array(
+				'id'   => 'bz_activity_attributes_group_scope',
+				'name' => __( 'Group Scope', 'bz' ),
+				'type' => 'radio',
+				'options' => $bz_scopes
+			),
+		),
+	);
+	$meta_boxes[] = array(
+		'title'      => __( 'Kit Attributes', 'bz' ),
+		'post_types' => array ('kit'),
+		'fields'     => array(
+			array(
+				'id'   => 'bz_kit_type',
+				'name' => __( 'Kit Type', 'bz' ),
+				'type' => 'radio',
+				'options' => array(
+					'll' => __('Learning Lab (default)', 'bz'),
+					'workshop' => __('Workshop (such as Public Narrative)', 'bz'),
+				),
+			),
+			array(
+				'id'   => 'bz_kit_vision',
+				'name' => __( 'Vision', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_outcomes',
+				'name' => __( 'Fellows Will... (please use bullet list)', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_important',
+				'name' => __( 'What is most important (please use bullets; begin with a term in bold, followed by &ldquo;&nbsp;&ndash;&nbsp;&rdquo;', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_prework',
+				'name' => __( 'Fellows&#39;s Pre-work (please use bullet list)', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_after',
+				'name' => __( 'After Learning Lab (please use bullets; begin with a term in bold, followed by &ldquo;&nbsp;&ndash;&nbsp;&rdquo;', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_start_time_adjust',
+				'name' => __( 'Start time adjustment (e.g. -30 means the first activity starts 30 minutes ahead of usual start time)', 'bz' ),
+				'type' => 'text',
+			),
+		)
+	);
+	$meta_boxes[] = array(
+		'title'      => __( 'Activities', 'bz' ),
+		'post_types' => array ('kit'),
+		'fields'     => array(
+			array(
+				'id'   => 'bz_kit_agenda',
+				'name' => __( 'Make an ordered list of links to the activities you wish to include in this kit.', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+		),
+	);
+	$meta_boxes[] = array(
+		'title'      => __( 'Logistical Information', 'bz' ),
+		'post_types' => array ('kit'),
+		'fields'     => $bz_logistics_fields,
+	);
+	$meta_boxes[] = array(
 		'title'      => __( 'What Staff Needs To Do', 'bz' ),
 		'post_types' => array ('kit'),
 		'fields'     => $bz_staff_tasks_fields,
 	);
-	 $meta_boxes[] = array(
-        'title'      => __( 'Appendix', 'bz' ),
-        'post_types' => array ('kit'),
-        'fields'     => array(
-            array(
-                'id'   => 'bz_kit_appendix',
-                'name' => __( 'This will appear at the end of the kit.', 'bz' ),
-                'type' => 'wysiwyg',
-            ),
-        ),
-    );
-    return $meta_boxes;
+	$meta_boxes[] = array(
+		'title'      => __( 'Appendix', 'bz' ),
+		'post_types' => array ('kit'),
+		'fields'     => array(
+			array(
+				'id'   => 'bz_kit_appendix',
+				'name' => __( 'This will appear at the end of the kit.', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+		),
+	);
+	return $meta_boxes;
 }
 
 /* Register Custom Taxonomy: */
