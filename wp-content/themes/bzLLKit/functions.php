@@ -419,9 +419,10 @@ add_filter( 'rwmb_meta_boxes', 'bz_meta_boxes' );
 // Need a few of these elsewhere so creating globally accesible arrays:
 $bz_scopes = array(
 					 	'cohort' => __('Cohort', 'bz'),
+						'merged' => __('Merged Cohorts', 'bz'),
+					 	'all' => __('All Cohorts', 'bz'),
 					 	'pairs' => __('Pairs/Triads', 'bz'),
 					 	'ind' => __('Individuals', 'bz'),
-					 	'all' => __('All Cohorts', 'bz'),
 					 );
 $bz_logistics = array(
 		'bz_kit_audience' => array(
