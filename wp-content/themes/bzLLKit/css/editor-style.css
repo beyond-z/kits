@@ -545,3 +545,25 @@ fieldset {
 .rtl table caption {
 	text-align: right;
 }
+
+.sub-duration {
+	float: left;
+	font-size: 13px;
+	padding: 3px 5px;
+	margin: 0.5em;
+	color: #333;
+	background: #DDD;
+	border-radius: 2px;
+}
+
+.sub-duration::before {
+	content: "\1F551";
+  display: inline-block;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 0.8em;
+  position: relative;
+  bottom: 1px;
+  margin-right: 2px; 
+
+}

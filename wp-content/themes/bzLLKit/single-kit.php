@@ -10,24 +10,30 @@
 // Reset because we had to run a sub-query to form the title:
 wp_reset_query();
 
-// set up a place to store activities so we don't have to query the DB more than once.
+// Set up a place to store activities so we don't have to query the DB more than once.
 $activity_posts = array();
 $full_activities ="";
+
+// Kit content varies based on Course (e.g. LL start time);
+// Get the Course from the URL query's passed param.
+global $course;
+global $course_custom_fields;
+
 
 get_header(); ?>
 <div id="primary" class="content-area">
 	<main id="main" class="site-main" role="main">
 		<header class="kit-header">
-			<div class="bkg">
-				<?php if(has_post_thumbnail()) { 
-					the_post_thumbnail('header');
-				} ?>
-			</div>
+			<?php if(has_post_thumbnail()) {  ?>
+				<div class="bkg">
+					<?php the_post_thumbnail('header');	?>
+				</div>
+			<?php } else { ?>
+				<div class="no-bkg-img">&nbsp;</div>
+			<?php } ?>
 			<div class="kit-masthead">
 				<h1>
-					<?php 
-					//bz_kit_title_prefix(); // see functions.php
-					the_title(); ?>
+					<?php the_title(); ?>
 				</h1>
 				<?php the_excerpt();?>
 			</div>
@@ -87,9 +93,10 @@ get_header(); ?>
 			if ($activity_id) $activity_posts[] = get_post($activity_id);
 		}
 		if (!empty($activity_posts)) {
-		
+			// Figure out start time based on referring course:
+			$stt = (!empty($course_custom_fields['bz_course_default_start_time'][0])) ? $course_custom_fields['bz_course_default_start_time'][0] : '18:00';
 			// Init generating the agenda timetable
-			$dt = DateTime::createFromFormat('H:i', '18:00'); 
+			$dt = DateTime::createFromFormat('H:i', $stt); 
 				// of course at some point we should make this NOT HARDCODED! e.g. draw the start time from the CMS or LMS...
 			$dtadjust = get_post_custom_values('bz_kit_start_time_adjust', $post->ID);
 			if ($dtadjust[0] < 0) {
@@ -117,12 +124,12 @@ get_header(); ?>
 								$activity_post['start_time'] = (string)$dt->format('g:i');
 								// Increase $dt by the activity's duration and add it to the post object as well:
 								$dt->add(new DateInterval('PT'.(int)$activity_duration.'M'));
-								// And store the duration and end time for late:
+								// And store the duration and end time for later:
 								$activity_post['duration'] = (string)(int)$activity_duration;
 								$activity_post['end_time'] = (string)$dt->format('g:i a');   
 								// Now convert it back to an object:
 								$activity_post = (object)$activity_post;
-								// And save the changes back to the posts array so we can use them later:
+								// And save the changes back to the posts array so we can use them in the content:
 								$activity_posts[$activity_key] = $activity_post;
 								?>
 							</td>
@@ -180,45 +187,6 @@ get_header(); ?>
 			</ul>
 		</div>
 	<?php } // end if (!empty($materials)) ?>
-	
-	<?php 
-	// Iterate through logistics fields if there are any
-	global $bz_logistics; // from functions.php
-	if(!empty(array_intersect_key($customfields, $bz_logistics))) { ?>
-		<div id="logistics" class="kit-component logistics start-collapsed">
-			<h2 id="logistics-header"><?php echo __('Logistical Information', 'bz');?></h2>
-			<?php 
-			// and now iterate through the logistics fields:
-			foreach ($bz_logistics as $bz_logistics_field_key => $bz_logistics_field_attributes) {
-				if (!empty($customfields[$bz_logistics_field_key])){ ?>
-					<div class="<?php echo $bz_logistics_field_key; ?>">
-						<h4><?php echo $bz_logistics_field_attributes['name'] ?></h4>
-						<?php echo apply_filters('the_content',$customfields[$bz_logistics_field_key][0]);?>
-					</div> <?php
-				} 
-			} // end foreach
-			?>
-		</div>
-	<?php	} ?>
-	<?php 
-	// Iterate through staff tasks if there are any:
-	global $bz_staff_tasks; // from functions.php
-	if(!empty(array_intersect_key($customfields, $bz_staff_tasks))) { ?>
-		<div id="staff-tasks" class="kit-component staff-tasks start-collapsed">
-			<h2 id="staff-tasks-header"><?php echo __('What Staff Needs To Do', 'bz');?></h2>
-			<?php 
-			// and now iterate through the logistics fields:
-			foreach ($bz_staff_tasks as $bz_staff_tasks_field_key => $bz_staff_tasks_attributes) {
-				if (!empty($customfields[$bz_staff_tasks_field_key])){ ?>
-					<div class="<?php echo $bz_staff_tasks_field_key; ?>">
-						<h4><?php echo $bz_staff_tasks_attributes['name'] ?></h4>
-						<?php echo apply_filters('the_content',$customfields[$bz_staff_tasks_field_key][0]);?>
-					</div> <?php
-				} 
-			} // end foreach
-			?>
-		</div>
-	<?php } ?>
   
   <?php
 	if (!empty($customfields['bz_kit_important'])){ ?>
@@ -243,7 +211,7 @@ get_header(); ?>
 						<div class="duration">
 							<span class="start"><?php echo $activity_post->start_time;?></span>
 							<span class="end">&ndash;&nbsp;<?php echo $activity_post->end_time;?></span>
-							<span class="minutes">&nbsp;&nbsp;[<?php echo $activity_post->duration .'&nbsp;'. __('Minutes', 'bz'); ?>]</span>
+							<span class="minutes"><?php echo $activity_post->duration .'&nbsp;'. __('Minutes', 'bz'); ?></span>
 						</div>						
 						<span class="activity-title"><?php echo $activity_post->post_title;?></span>
 						<?php 
@@ -254,8 +222,9 @@ get_header(); ?>
 										<?php echo $bz_scopes[$activity_scope]; // get title by key. $bz_scopes is defined in functions.php ?>
 									</span>
 								<?php } // end if scope ?>
+						<div class="activity-outcomes"><?php echo apply_filters('the_content', $activity_post->post_excerpt); ?></div>
 					</header>
-					<div class="activity-outcomes"><?php echo apply_filters('the_content', $activity_post->post_excerpt); ?></div>
+					
 					<div class="activity-content"><?php echo apply_filters('the_content', $activity_post->post_content); ?></div>
 					<?php if ( current_user_can( 'edit_posts' ) ) { ?>
 						<footer class="activity-footer">
@@ -292,6 +261,45 @@ get_header(); ?>
 	} 
 	?>
 	
+	<?php 
+	// Iterate through logistics fields if there are any
+	global $bz_logistics; // from functions.php
+	if(!empty(array_intersect_key($customfields, $bz_logistics))) { ?>
+		<div id="logistics" class="kit-component for-staff logistics start-collapsed">
+			<h2 id="logistics-header"><?php echo __('Logistical Information', 'bz');?></h2>
+			<?php 
+			// and now iterate through the logistics fields:
+			foreach ($bz_logistics as $bz_logistics_field_key => $bz_logistics_field_attributes) {
+				if (!empty($customfields[$bz_logistics_field_key])){ ?>
+					<div class="<?php echo $bz_logistics_field_key; ?>">
+						<h4><?php echo $bz_logistics_field_attributes['name'] ?></h4>
+						<?php echo apply_filters('the_content',$customfields[$bz_logistics_field_key][0]);?>
+					</div> <?php
+				} 
+			} // end foreach
+			?>
+		</div>
+	<?php	} ?>
+	<?php 
+	// Iterate through staff tasks if there are any:
+	global $bz_staff_tasks; // from functions.php
+	if(!empty(array_intersect_key($customfields, $bz_staff_tasks))) { ?>
+		<div id="staff-tasks" class="kit-component for-staff staff-tasks start-collapsed">
+			<h2 id="staff-tasks-header"><?php echo __('What Staff Needs To Do', 'bz');?></h2>
+			<?php 
+			// and now iterate through the logistics fields:
+			foreach ($bz_staff_tasks as $bz_staff_tasks_field_key => $bz_staff_tasks_attributes) {
+				if (!empty($customfields[$bz_staff_tasks_field_key])){ ?>
+					<div class="<?php echo $bz_staff_tasks_field_key; ?>">
+						<h4><?php echo $bz_staff_tasks_attributes['name'] ?></h4>
+						<?php echo apply_filters('the_content',$customfields[$bz_staff_tasks_field_key][0]);?>
+					</div> <?php
+				} 
+			} // end foreach
+			?>
+		</div>
+	<?php } ?>
+
 	</main><!-- .site-main -->
 </div><!-- .content-area -->
 

@@ -32,6 +32,9 @@ if ( version_compare( $GLOBALS['wp_version'], '4.4-alpha', '<' ) ) {
 	require get_template_directory() . '/inc/back-compat.php';
 }
 
+//
+
+
 if ( ! function_exists( 'bz_setup' ) ) :
 /**
  * Sets up theme defaults and registers support for various WordPress features.
@@ -89,6 +92,7 @@ function bz_setup() {
 		'comment-list',
 		'gallery',
 		'caption',
+		'editor-style',
 	) );
 
 	/*
@@ -354,6 +358,7 @@ function bz_register_activity() {
 	register_post_type( 'activity', $args );
 }
 add_action( 'init', 'bz_register_activity', 0 );
+
 // Custom content (for things we'd like to edit like the footer text, copyright notice, etc.):
 function bz_register_custom_content() {
 
@@ -407,6 +412,63 @@ function bz_register_custom_content() {
 
 }
 add_action( 'init', 'bz_register_custom_content', 0 );
+
+// Course:
+// Register Custom Post Type
+function bz_register_course_cpt() {
+
+	$labels = array(
+		'name'                  => _x( 'Courses', 'Post Type General Name', 'bz' ),
+		'singular_name'         => _x( 'Course', 'Post Type Singular Name', 'bz' ),
+		'menu_name'             => __( 'Courses', 'bz' ),
+		'name_admin_bar'        => __( 'Course', 'bz' ),
+		'archives'              => __( 'Item Archives', 'bz' ),
+		'attributes'            => __( 'Item Attributes', 'bz' ),
+		'parent_item_colon'     => __( 'Parent Item:', 'bz' ),
+		'all_items'             => __( 'All Items', 'bz' ),
+		'add_new_item'          => __( 'Add New Item', 'bz' ),
+		'add_new'               => __( 'Add New', 'bz' ),
+		'new_item'              => __( 'New Item', 'bz' ),
+		'edit_item'             => __( 'Edit Item', 'bz' ),
+		'update_item'           => __( 'Update Item', 'bz' ),
+		'view_item'             => __( 'View Item', 'bz' ),
+		'view_items'            => __( 'View Items', 'bz' ),
+		'search_items'          => __( 'Search Item', 'bz' ),
+		'not_found'             => __( 'Not found', 'bz' ),
+		'not_found_in_trash'    => __( 'Not found in Trash', 'bz' ),
+		'featured_image'        => __( 'Featured Image', 'bz' ),
+		'set_featured_image'    => __( 'Set featured image', 'bz' ),
+		'remove_featured_image' => __( 'Remove featured image', 'bz' ),
+		'use_featured_image'    => __( 'Use as featured image', 'bz' ),
+		'insert_into_item'      => __( 'Insert into item', 'bz' ),
+		'uploaded_to_this_item' => __( 'Uploaded to this item', 'bz' ),
+		'items_list'            => __( 'Items list', 'bz' ),
+		'items_list_navigation' => __( 'Items list navigation', 'bz' ),
+		'filter_items_list'     => __( 'Filter items list', 'bz' ),
+	);
+	$args = array(
+		'label'                 => __( 'Course', 'bz' ),
+		'labels'                => $labels,
+		'supports'              => array( 'title', 'editor', 'excerpt', 'thumbnail', 'revisions', 'custom-fields'),
+		'hierarchical'          => false,
+		'public'                => true,
+		'show_ui'               => true,
+		'show_in_menu'          => true,
+		'menu_position'         => 10,
+		'menu_icon'             => 'dashicons-welcome-learn-more',
+		'show_in_admin_bar'     => true,
+		'show_in_nav_menus'     => true,
+		'can_export'            => true,
+		'has_archive'           => true,		
+		'exclude_from_search'   => false,
+		'publicly_queryable'    => true,
+		'capability_type'       => 'page',
+	);
+	register_post_type( 'course', $args );
+
+}
+add_action( 'init', 'bz_register_course_cpt', 0 );
+
 /**/
 /* Add metaboxes (small dialog boxes on the editor screen to input custom fields) */
 /**/
@@ -524,7 +586,7 @@ function bz_meta_boxes( $meta_boxes ) {
 				'type' => 'radio',
 				'options' => array(
 					'll' => __('Learning Lab (default)', 'bz'),
-					'workshop' => __('Workshop (such as Public Narrative)', 'bz'),
+					'workshop' => __('Workshop (skips week numbering and shows more fields)', 'bz'),
 				),
 			),
 			array(
@@ -640,7 +702,6 @@ function bz_remove_menus(){
   remove_menu_page( 'jetpack' );                    //Jetpack* 
   remove_menu_page( 'edit.php' );                   //Posts
   remove_menu_page( 'upload.php' );                 //Media
-  remove_menu_page( 'edit.php?post_type=page' );    //Pages
   remove_menu_page( 'edit-comments.php' );          //Comments
   //remove_menu_page( 'themes.php' );                 //Appearance
   //remove_menu_page( 'plugins.php' );                //Plugins
@@ -669,14 +730,20 @@ add_filter( 'mce_buttons_2', 'bz_mce_buttons_2' );
 // Now add the custom styles:
 function bz_mce_before_init_insert_formats( $init_array ) {  
 	$style_formats = array(  
-		// Each array child is a format with it's own settings
+		// Each child array in here is a format with its own settings
 		array(  
 			'title' => 'Core activity',  
 			'block' => 'div',  
 			'classes' => 'core',
 			'exact' => true,
 			'wrapper' => true,
-		
+		), 
+		array(  
+			'title' => 'Sub-activity duration',  
+			'block' => 'div',  
+			'classes' => 'sub-duration',
+			'exact' => true,
+			'wrapper' => true,
 		), 
 	);  
 	// Insert the array, JSON ENCODED, into 'style_formats'
@@ -688,8 +755,22 @@ function bz_mce_before_init_insert_formats( $init_array ) {
 // Attach callback to 'tiny_mce_before_init' 
 add_filter( 'tiny_mce_before_init', 'bz_mce_before_init_insert_formats' );
 
+// Add a course variable to pass to kits:
+function bz_parameter_queryvars( $qvars ) {
+	$qvars[] = 'bzcourse';
+	return $qvars;
+}
+add_filter('query_vars', 'bz_parameter_queryvars' );
+function bz_add_rewrite_rules($rules) {
+	$new_rule = array('kit/([^/]+)/(bzcourse)/?$' => 'index.php?bzcourse=$matches[1]');
+	$rules = $new_rule + $rules;
+	return $rules;
+}
+ 
+// hook add_rewrite_rules function into rewrite_rules_array
+add_filter('rewrite_rules_array', 'add_rewrite_rules');
 
-/* Generate a prefix for LL titles to show week number: */
+/* Generate a prefix for LL titles to show week number: 
 
 
 // collect post IDs in a global array for all the kits that are LLs (or are not defined as anything else):

@@ -19,22 +19,22 @@ get_header(); ?>
 		<main id="main" class="site-main" role="main">
 
 			<?php
-			// List the kits:
+			// List the courses:
 			$args = array (
-				'post_type'              => array( 'kit' ),
+				'post_type'              => array( 'course' ),
 				'post_status'            => array( 'publish' ),
 				'nopaging'               => true,
 				'posts_per_page'         => '-1',
 				'order'                  => 'ASC',
 				'orderby'                => 'menu_order',
 			);
-			$kits = new WP_Query( $args );
-			if ( $kits->have_posts() ) { ?>
-				<h2><?php echo __('All Kits:', 'bz');?></h2>				
-				<table id="kits">
-					<?php // loop through the kits:
-					while ( $kits->have_posts() ) {
-						$kits->the_post(); ?>
+			$courses = new WP_Query( $args );
+			if ( $courses->have_posts() ) { ?>
+				<h2><?php echo __('Please select course:', 'bz');?></h2>				
+				<table id="courses">
+					<?php // loop through the courses:
+					while ( $courses->have_posts() ) {
+						$courses->the_post(); ?>
 	
 							<tr id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
 								<td class="visual">
@@ -51,24 +51,11 @@ get_header(); ?>
 									<div class="entry-content">
 										<?php the_excerpt();	?>
 									</div><!-- .entry-content -->
-								
-									<?php
-										edit_post_link(
-											sprintf(
-												/* translators: %s: Name of current post */
-												__( 'Edit<span class="screen-reader-text"> "%s"</span>', 'bz' ),
-												get_the_title()
-											),
-											'<footer class="entry-footer"><span class="edit-link">',
-											'</span></footer><!-- .entry-footer -->'
-										);
-									?>
-								
 								</td><!-- #activity-## -->
 							</tr>
 						<?php
 					} //end while ?>
-					</table><!-- #kits -->
+					</table><!-- #courses -->
 				<?php 
 				} else {
 					// no posts found
