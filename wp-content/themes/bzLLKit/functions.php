@@ -469,15 +469,6 @@ function bz_register_course_cpt() {
 }
 add_action( 'init', 'bz_register_course_cpt', 0 );
 
-/**/
-/* Add metaboxes (small dialog boxes on the editor screen to input custom fields) */
-/**/
-/**/
-/* IMPORTANT: This implementation relies on a plugin called meta-box (https://metabox.io)                 */
-/*            but can be done without it (just lots more work). See the plugin website for documentation  */
-/**/
-
-add_filter( 'rwmb_meta_boxes', 'bz_meta_boxes' );
 // Need a few of these elsewhere so creating globally accesible arrays:
 $bz_scopes = array(
 					 	'cohort' => __('Cohort', 'bz'),
@@ -554,7 +545,14 @@ foreach ($bz_staff_tasks as $bzstk => $bzstv) {
 		'type' => $bzstv['type'],
 	);
 }
-// Now let's make the boxes:
+
+/**/
+/* Add metaboxes (small dialog boxes on the editor screen to input custom fields) */
+/**/
+/**/
+/* IMPORTANT: This implementation relies on a plugin called meta-box (https://metabox.io)                 */
+/*            but can be done without it (just lots more work). See the plugin website for documentation  */
+/**/
 function bz_meta_boxes( $meta_boxes ) {
 	global $bz_scopes;
 	global $bz_logistics_fields;
@@ -655,6 +653,8 @@ function bz_meta_boxes( $meta_boxes ) {
 	);
 	return $meta_boxes;
 }
+add_filter( 'rwmb_meta_boxes', 'bz_meta_boxes' );
+
 
 /* Register Custom Taxonomy: */
 function bz_generate_materials_tax() {
@@ -761,14 +761,13 @@ function bz_parameter_queryvars( $qvars ) {
 	return $qvars;
 }
 add_filter('query_vars', 'bz_parameter_queryvars' );
-function bz_add_rewrite_rules($rules) {
-	$new_rule = array('kit/([^/]+)/(bzcourse)/?$' => 'index.php?bzcourse=$matches[1]');
-	$rules = $new_rule + $rules;
-	return $rules;
+
+// Allow us to pass bzcourse=blah as a query parameter.
+function bz_add_rewrite_rules(){
+    add_rewrite_rule('kit/([^/]+)/(bzcourse)/?$', 'index.php?bzcourse=$matches[1]');
 }
- 
-// hook add_rewrite_rules function into rewrite_rules_array
-add_filter('rewrite_rules_array', 'add_rewrite_rules');
+add_action('init', 'bz_add_rewrite_rules');
+
 
 /* Generate a prefix for LL titles to show week number: 
 
