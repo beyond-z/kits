@@ -38,7 +38,7 @@ global $course_custom_fields;
 					if ( is_front_page() && is_home() ) { 
 					} else { ?>
 						<div class="site-title">
-							<a href="<?php echo esc_url( home_url( '/' ) ); ?>" rel="home">
+							<a href="<?php echo esc_url( home_url( '/course/' ) ) . $course; ?>" rel="home">
 								<?php echo __('Home', 'bz'); //bloginfo( 'name' ); ?>
 							</a>
 							<?php if ('kit' == $post->post_type) { ?>
