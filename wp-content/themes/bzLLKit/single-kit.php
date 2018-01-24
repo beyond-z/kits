@@ -100,8 +100,8 @@ get_header(); ?>
 			$eventtime = (!empty($course_custom_fields['bz_course_event_start_time'][0])) ? $course_custom_fields['bz_course_event_start_time'][0] : '9:00';
 			$kit_type = (!empty ($customfields['bz_kit_type'][0]) ) ? $customfields['bz_kit_type'][0] : 'll';
 
-			print_r($course_custom_fields);
-			print_r($kit_type);
+			//print_r($course_custom_fields);
+			//print_r($kit_type);
       if ( $kit_type != 'll' ) {
 				$stt = $eventtime;
 			}

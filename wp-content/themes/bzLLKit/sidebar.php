@@ -1,0 +1,1 @@
+<?php /* Wordpress requires this file, even if it's empty... */ ?>
