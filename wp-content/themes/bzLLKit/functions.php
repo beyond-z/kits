@@ -598,6 +598,21 @@ function bz_meta_boxes( $meta_boxes ) {
 				'type' => 'wysiwyg',
 			),
 			array(
+				'id'   => 'bz_kit_goals',
+				'name' => __( 'Goals', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_objectives',
+				'name' => __( 'Objectives', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_look_and_feel',
+				'name' => __( 'Look and feel of the event', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
 				'id'   => 'bz_kit_important',
 				'name' => __( 'What is most important (please use bullets; begin with a term in bold, followed by &ldquo;&nbsp;&ndash;&nbsp;&rdquo;', 'bz' ),
 				'type' => 'wysiwyg',

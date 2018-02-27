@@ -10,9 +10,10 @@
  */
 
 global $course;
-$course = !empty( $_GET['bzcourse'] ) ? $_GET['bzcourse'] : ''; 
+$course = ( isset( $_GET['bzcourse'] ) ) ? $_GET['bzcourse'] : ''; 
 global $course_custom_fields;
-
+$home_target = esc_url( home_url() );
+$home_target .= ($course) ? esc_url( '/course/' ) . $course : '';
 
 ?><!DOCTYPE html>
 <html <?php language_attributes(); ?> class="no-js">
@@ -38,7 +39,7 @@ global $course_custom_fields;
 					if ( is_front_page() && is_home() ) { 
 					} else { ?>
 						<div class="site-title">
-							<a href="<?php echo esc_url( home_url( '/course/' ) ) . $course; ?>" rel="home">
+							<a href="<?php echo $home_target; ?>" rel="home">
 								<?php echo __('Home', 'bz'); //bloginfo( 'name' ); ?>
 							</a>
 							<?php if ('kit' == $post->post_type) { ?>
@@ -57,6 +58,7 @@ global $course_custom_fields;
 										if ( $courses->have_posts() ) {
 											?>
 											<select class="form-control" name="bzcourse" id="active-course-selector" onchange="document.getElementById('course-selector').submit();">
+												<option value="">&nbsp;</option>
 												<?php 
 											while ( $courses->have_posts() ) {
 												$courses->the_post();

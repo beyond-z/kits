@@ -51,13 +51,36 @@ get_header(); ?>
 			<h2><?php echo __('Vision', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_vision'][0]);?>
 		</div> <?php
-	} ?>
-	<?php 
+	} 
 	// Make sure there's at least the first outcome, then get all three:
 	if (!empty($customfields['bz_kit_outcomes'])){ ?>
 		<div class="kit-component outcomes">
 			<h2><?php echo __('Fellows Will:', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_outcomes'][0]);?>
+		</div> <?php
+	} 
+
+	// Show goals, if there are any:
+	if (!empty($customfields['bz_kit_goals'])){ ?>
+		<div class="kit-component goals">
+			<h2><?php echo __('Goals:', 'bz'); ?></h2>
+			<?php echo apply_filters('the_content',$customfields['bz_kit_goals'][0]);?>
+		</div> <?php
+	} 
+
+	// Show objectives, if there are any:
+	if (!empty($customfields['bz_kit_objectives'])){ ?>
+		<div class="kit-component goals">
+			<h2><?php echo __('Objectives:', 'bz'); ?></h2>
+			<?php echo apply_filters('the_content',$customfields['bz_kit_objectives'][0]);?>
+		</div> <?php
+	} 
+
+	// Show Look and Feel instructions if there are any:
+	if (!empty($customfields['bz_kit_look_and_feel'])){ ?>
+		<div class="kit-look-and-feel">
+			<h2><?php echo __('Look and Feel:', 'bz'); ?></h2>
+			<?php echo apply_filters('the_content',$customfields['bz_kit_look_and_feel'][0]);?>
 		</div> <?php
 	} ?>
 	<?php 
