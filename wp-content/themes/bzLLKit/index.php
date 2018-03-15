@@ -26,7 +26,7 @@ get_header(); ?>
 				'nopaging'               => true,
 				'posts_per_page'         => '-1',
 				'order'                  => 'ASC',
-				'orderby'                => 'menu_order',
+				'orderby'                => 'post_title',
 			);
 			$courses = new WP_Query( $args );
 			if ( $courses->have_posts() ) { ?>

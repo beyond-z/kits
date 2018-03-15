@@ -16,7 +16,7 @@ get_header(); ?>
 				<header class="page-header">
 					<h1 class="page-title"><?php _e( 'Oops! That content can&rsquo;t be found.', 'bz' ); ?></h1>
 				</header><!-- .page-header -->
-
+				
 				<div class="page-content">
 					<p><?php _e( 'Please contact the Braven team for help: <a target="_blank" href="mailto:support@bebraven.org">support@bebraven.org</a>', 'bz' ); ?></p>
 				</div><!-- .page-content -->

@@ -116,65 +116,93 @@ get_header(); ?>
 			if ($activity_id) $activity_posts[] = get_post($activity_id);
 		}
 		if (!empty($activity_posts)) {
-			// Figure out start time based on referring course:
-      $stt = (!empty($course_custom_fields['bz_course_default_start_time'][0])) ? $course_custom_fields['bz_course_default_start_time'][0] : '18:00';
+			// If we have any activities associated with this kit, we list them. 
 
-			// If there's a custom event start time and this is an event (not a Learning Lab), use the event start time instead:
-			$eventtime = (!empty($course_custom_fields['bz_course_event_start_time'][0])) ? $course_custom_fields['bz_course_event_start_time'][0] : '9:00';
+			// First we need to figure out the start time of the first activity, based on the current course the user is viewing:
+	      	$start_time_string = (!empty($course_custom_fields['bz_course_default_start_time'][0])) ? $course_custom_fields['bz_course_default_start_time'][0] : '18:00';
+
+			// If there's a custom event start time and this is an Event kit (not a Learning Lab), use the event start time instead:
 			$kit_type = (!empty ($customfields['bz_kit_type'][0]) ) ? $customfields['bz_kit_type'][0] : 'll';
-
-			//print_r($course_custom_fields);
-			//print_r($kit_type);
-      if ( $kit_type != 'll' ) {
-				$stt = $eventtime;
+			$eventtime = (!empty($course_custom_fields['bz_course_event_start_time'][0])) ? $course_custom_fields['bz_course_event_start_time'][0] : '9:00';
+			if ( $kit_type != 'll' ) {
+				$start_time_string = $eventtime;
 			}
-			// Init generating the agenda timetable
-			$dt = DateTime::createFromFormat('H:i', $stt); 
-				// of course at some point we should make this NOT HARDCODED! e.g. draw the start time from the CMS or LMS...
-			$dtadjust = get_post_custom_values('bz_kit_start_time_adjust', $post->ID);
-			if ($dtadjust[0] < 0) {
-				$dt->sub(new DateInterval('PT'.abs($dtadjust[0]).'M'));
-			} else if ($dtadjust[0] > 0) {
-				$dt->add(new DateInterval('PT'.$dtadjust[0].'M'));
-			}		
+
+			// Use a custom start time per Course, if one is defined in the Kit (format is slug=HH:MM;slug2=HH:MM):
+
+			$custom_times_strings = explode(';', get_post_custom_values('bz_kit_custom_start_times', $post->ID)[0] );
+			foreach ($custom_times_strings as $ctv) {
+				// Explode the string so we can use its parts as a key=>value pair:
+				$ctv = explode('=', $ctv);
+				if( isset($ctv[0]) ) {
+					$custom_times[$ctv[0]] = $ctv[1];
+				}
+			}
+
+			if ( isset($custom_times[$course]) ) {
+				$start_time_string = $custom_times[$course];
+			}
+
+
+			// Convert the string to a Datetime:
+			$start_time = DateTime::createFromFormat('H:i', $start_time_string); 
+
+
+			// Make adjustments based on custom offset set for the Kit, 
+			// BUT ONLY IF there's no custom start time set per course:
+			
+			if (!isset( $custom_times[$course] )) {
+				$start_time_adjust = get_post_custom_values('bz_kit_start_time_adjust', $post->ID);
+
+
+				if ($start_time_adjust[0] < 0) {
+					$start_time->sub(new DateInterval('PT'.abs($start_time_adjust[0]).'M'));
+				} else if ($start_time_adjust[0] > 0) {
+					$start_time->add(new DateInterval('PT'.$start_time_adjust[0].'M'));
+				}		
+
+			}
+
+			// Okay, we finally the starting time, so let's generate the agenda timetable:
+
 			?>
-			<div id="agenda" class="kit-component agenda">
-				<h2><?php echo __('Agenda','bz');?></h2>
-				<table>
-				<?php 
-				foreach ($activity_posts as $activity_key => $activity_post) { 
-					if ($activity_post->post_status == 'publish') { ?>
-						<tr>
-							<td>
-								<?php 
-								$activity_duration = get_post_meta( $activity_post->ID, 'bz_activity_attributes_minutes', 'true' );
-								// Show start time and add minutes from this activity
-								// forcing (int)$activity_duration to convert empties to zeros.
-								// Also add those times as properties to the post object for later use.
-								echo $dt->format('g:i a');
-								// Convert post object to array so we can add properties:
-								$activity_post = (array)$activity_post;
-								$activity_post['start_time'] = (string)$dt->format('g:i');
-								// Increase $dt by the activity's duration and add it to the post object as well:
-								$dt->add(new DateInterval('PT'.(int)$activity_duration.'M'));
-								// And store the duration and end time for later:
-								$activity_post['duration'] = (string)(int)$activity_duration;
-								$activity_post['end_time'] = (string)$dt->format('g:i a');   
-								// Now convert it back to an object:
-								$activity_post = (object)$activity_post;
-								// And save the changes back to the posts array so we can use them in the content:
-								$activity_posts[$activity_key] = $activity_post;
-								?>
-							</td>
-							<td>
-								<a href="<?php echo '#'.$activity_post->post_name; ?>">
-									<span class="activity-name"><?php echo $activity_post->post_title; ?></span>
-								</a>
-								<span class="duration">(<?php echo $activity_duration;?>)</span>
-								<br />
-								<span class="activity-desc"><?php echo apply_filters('the_content', $activity_post->post_excerpt);?></span>
-							</td>
-						</tr>
+				<div id="agenda" class="kit-component agenda">
+					<h2><?php echo __('Agenda','bz');?></h2>
+					<table>
+					<?php 
+					foreach ($activity_posts as $activity_key => $activity_post) { 
+						if ($activity_post->post_status == 'publish') { ?>
+							<tr>
+								<td>
+									<?php 
+									$activity_duration = get_post_meta( $activity_post->ID, 'bz_activity_attributes_minutes', 'true' );
+									// Show start time and add minutes from this activity
+									// forcing (int)$activity_duration to convert empties to zeros.
+									// Also add those times as properties to the post object for later use.
+									echo $start_time->format('g:i a');
+									// Convert post object to array so we can add properties:
+									$activity_post = (array)$activity_post;
+									$activity_post['start_time'] = (string)$start_time->format('g:i');
+									// Increase $start_time by the activity's duration and add it to the post object as well:
+									$start_time->add(new DateInterval('PT'.(int)$activity_duration.'M'));
+									// And store the duration and end time for later:
+									$activity_post['duration'] = (string)(int)$activity_duration;
+									$activity_post['end_time'] = (string)$start_time->format('g:i a');   
+									// Now convert it back to an object:
+									$activity_post = (object)$activity_post;
+									// And save the changes back to the posts array so we can use them in the content:
+									$activity_posts[$activity_key] = $activity_post;
+									?>
+								</td>
+								<td>
+									<a href="<?php echo '#'.$activity_post->post_name; ?>">
+										<span class="activity-name"><?php echo $activity_post->post_title; ?></span>
+									</a>
+									<span class="duration">(<?php echo $activity_duration;?>)</span>
+									<br />
+									<span class="activity-desc"><?php echo apply_filters('the_content', $activity_post->post_excerpt);?></span>
+								</td>
+							</tr>
 						<?php
 						$activity_materials = wp_get_object_terms( $activity_post->ID, 'material');
 						if (!empty($activity_materials)) {
@@ -238,23 +266,34 @@ get_header(); ?>
 			<h2 id="activity-plan-header"><?php echo __('Activity Plan', 'bz'); ?></h2>
 			<?php 
 			
-			foreach ($activity_posts as $activity_post) {	?>
-				<article class="activity" id="<?php echo $activity_post->post_name; ?>">
+			foreach ($activity_posts as $activity_post) {	
+
+				// See who is the facilitator so we can apply a different style to the activity:
+				global $bz_facilitators;
+				$activity_facilitator = get_post_meta( $activity_post->ID, 'bz_activity_attributes_facilitator', 'true' ); ?>
+					
+
+				<article class="activity <?php echo $activity_facilitator;?>" id="<?php echo $activity_post->post_name; ?>">
 					<header class="activity-header">
 						<div class="duration">
 							<span class="start"><?php echo $activity_post->start_time;?></span>
 							<span class="end">&ndash;&nbsp;<?php echo $activity_post->end_time;?></span>
 							<span class="minutes"><?php echo $activity_post->duration .'&nbsp;'. __('Minutes', 'bz'); ?></span>
+							<?php if ($activity_facilitator) { ?>
+								<span class="facilitator facilitator-<?php echo $activity_facilitator;?>">
+									<?php echo __('Facilitated by ', 'bz') . $bz_facilitators[$activity_facilitator]; // get user-facing title by key. $bz_facilitators is defined in functions.php ?>
+								</span>
+							<?php } // end if facilitator ?>
 						</div>						
 						<span class="activity-title"><?php echo $activity_post->post_title;?></span>
 						<?php 
 							global $bz_scopes;
 							$activity_scope = get_post_meta( $activity_post->ID, 'bz_activity_attributes_group_scope', 'true' );
-								if ($activity_scope) { ?>
-									<span class="scope scope-'<?php echo $activity_scope;?>">
-										<?php echo $bz_scopes[$activity_scope]; // get title by key. $bz_scopes is defined in functions.php ?>
-									</span>
-								<?php } // end if scope ?>
+							if ($activity_scope) { ?>
+								<span class="scope scope-<?php echo $activity_scope;?>">
+									<?php echo $bz_scopes[$activity_scope]; // get user-facing title by key. $bz_scopes is defined in functions.php ?>
+								</span>
+							<?php } // end if scope ?>
 						<div class="activity-outcomes"><?php echo apply_filters('the_content', $activity_post->post_excerpt); ?></div>
 					</header>
 					
@@ -278,7 +317,7 @@ get_header(); ?>
 	<?php
 	if (!empty($customfields['bz_kit_after'])){ ?>
 		<div class="kit-component important">
-			<h2><?php echo __('After Learning Lab', 'bz'); ?></h2>
+			<h2><?php echo __('Fellows: After Learning Lab', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_after'][0]);?>
 		</div> <?php
 	} 

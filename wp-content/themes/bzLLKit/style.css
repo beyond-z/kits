@@ -312,6 +312,7 @@ th,
 .activity .duration,
 .agenda .activity-name,
 .activity .scope,
+.activity .facilitator,
 .sub-duration,
 .core::before,
 #kits .visual,
@@ -382,6 +383,14 @@ a:hover {
 .activity header {
 	position: relative;
 	background: #EBF7F7;	
+}
+.activity.staff header,
+.activity.fellow header,
+.activity.other header {
+	background: #EDDCBE;	
+}
+.activity .facilitator {
+	color: #EB3B46;	
 }
 .activity-outcomes {
 	margin: 0;
@@ -566,7 +575,7 @@ a:hover {
 	padding: 3px 5px;
 	margin: 0.5em;
 	color: #333;
-	background: #EBF7F7;
+	background: none;
 	border-radius: 2px;
 }
 .sub-duration::before,

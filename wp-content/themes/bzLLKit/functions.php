@@ -471,12 +471,18 @@ add_action( 'init', 'bz_register_course_cpt', 0 );
 
 // Need a few of these elsewhere so creating globally accesible arrays:
 $bz_scopes = array(
-					 	'cohort' => __('Cohort', 'bz'),
-						'merged' => __('Merged Cohorts', 'bz'),
-					 	'all' => __('All Cohorts', 'bz'),
-					 	'pairs' => __('Pairs/Triads', 'bz'),
-					 	'ind' => __('Individuals', 'bz'),
-					 );
+ 	'cohort' => __('Cohort', 'bz'),
+	'merged' => __('Merged Cohorts', 'bz'),
+ 	'all' => __('All Cohorts', 'bz'),
+ 	'pairs' => __('Pairs/Triads', 'bz'),
+ 	'ind' => __('Individuals', 'bz'),
+);
+$bz_facilitators = array(
+	'coach' => 'Coach',
+	'staff' => 'Braven Staff',
+	'fellow' => 'Fellow(s)',
+	'other' => 'Other',
+);
 $bz_logistics = array(
 		'bz_kit_audience' => array(
 			 'name' => __( 'Audience', 'bz' ),
@@ -555,6 +561,7 @@ foreach ($bz_staff_tasks as $bzstk => $bzstv) {
 /**/
 function bz_meta_boxes( $meta_boxes ) {
 	global $bz_scopes;
+	global $bz_facilitators;
 	global $bz_logistics_fields;
 	global $bz_staff_tasks_fields;
 	$meta_boxes[] = array(
@@ -572,6 +579,12 @@ function bz_meta_boxes( $meta_boxes ) {
 				'type' => 'radio',
 				'options' => $bz_scopes
 			),
+			array(
+				'id'   => 'bz_activity_attributes_facilitator',
+				'name' => __( 'Who is facilitating?', 'bz' ),
+				'type' => 'radio',
+				'options' => $bz_facilitators,
+			),
 		),
 	);
 	$meta_boxes[] = array(
@@ -586,6 +599,16 @@ function bz_meta_boxes( $meta_boxes ) {
 					'll' => __('Learning Lab (default)', 'bz'),
 					'workshop' => __('Workshop (skips week numbering and shows more fields)', 'bz'),
 				),
+			),
+			array(
+				'id'   => 'bz_kit_start_time_adjust',
+				'name' => __( 'Start time offset in minutes (e.g. -30 means the first activity starts 30 minutes ahead of the usual start time, defined for the Course)', 'bz' ),
+				'type' => 'text',
+			),
+			array(
+				'id'   => 'bz_kit_custom_start_times',
+				'name' => __( 'Custom start times, by course "slug" (see knowledgebase.bebraven.org for instructions)', 'bz' ),
+				'type' => 'text',
 			),
 			array(
 				'id'   => 'bz_kit_vision',
@@ -626,11 +649,6 @@ function bz_meta_boxes( $meta_boxes ) {
 				'id'   => 'bz_kit_after',
 				'name' => __( 'After Learning Lab (please use bullets; begin with a term in bold, followed by &ldquo;&nbsp;&ndash;&nbsp;&rdquo;', 'bz' ),
 				'type' => 'wysiwyg',
-			),
-			array(
-				'id'   => 'bz_kit_start_time_adjust',
-				'name' => __( 'Start time adjustment (e.g. -30 means the first activity starts 30 minutes ahead of usual start time)', 'bz' ),
-				'type' => 'text',
 			),
 		)
 	);
