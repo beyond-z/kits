@@ -281,7 +281,7 @@ get_header(); ?>
 							<span class="minutes"><?php echo $activity_post->duration .'&nbsp;'. __('Minutes', 'bz'); ?></span>
 							<?php if ($activity_facilitator) { ?>
 								<span class="facilitator facilitator-<?php echo $activity_facilitator;?>">
-									<?php echo __('Facilitated by ', 'bz') . $bz_facilitators[$activity_facilitator]; // get user-facing title by key. $bz_facilitators is defined in functions.php ?>
+									<?php if ('coach' != $activity_facilitator) echo __('Facilitated by ', 'bz') . $bz_facilitators[$activity_facilitator]; // get user-facing title by key. $bz_facilitators is defined in functions.php ?>
 								</span>
 							<?php } // end if facilitator ?>
 						</div>						
