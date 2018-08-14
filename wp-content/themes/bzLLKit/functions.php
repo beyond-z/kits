@@ -51,7 +51,7 @@ function bz_setup() {
 	/*
 	 * Make theme available for translation.
 	 * Translations can be filed at WordPress.org. See: https://translate.wordpress.org/projects/wp-themes/bz
-	 * If you're building a theme based on Braven LL Kit, use a find and replace
+	 * If you're building a theme based on Braven LL Kit, use a find and replacec
 	 * to change 'bz' to the name of your theme in all the template files
 	 */
 	//load_theme_bz( 'bz' );
@@ -588,6 +588,17 @@ function bz_meta_boxes( $meta_boxes ) {
 		),
 	);
 	$meta_boxes[] = array(
+		'title'      => __( 'Course Attributes', 'bz' ),
+		'post_types' => 'course',
+		'fields'     => array(
+			array(
+				'id'   => 'bz_course_attributes_portal_id',
+				'name' => __( 'Portal ID of this Course', 'bz' ),
+				'type' => 'number',
+			),
+		),
+	);
+	$meta_boxes[] = array(
 		'title'      => __( 'Kit Attributes', 'bz' ),
 		'post_types' => array ('kit'),
 		'fields'     => array(
@@ -642,7 +653,12 @@ function bz_meta_boxes( $meta_boxes ) {
 			),
 			array(
 				'id'   => 'bz_kit_prework',
-				'name' => __( 'Fellows&#39;s Pre-work (please use bullet list)', 'bz' ),
+				'name' => __( 'Fellows&#39;s Pre-work<ul><li>Please use bullet list.</li><li>To show the cohort&#39;s answers from the module use this shortcode (at least one magic field ID is required, use commas to add more): <code>[cohort-answers="place-magic-field-id-here, optioanlly-another-one-here"]</code></li></ul>', 'bz' ),
+				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_how_to_prep',
+				'name' => __( 'How to Prepare (please use bullet list)', 'bz' ),
 				'type' => 'wysiwyg',
 			),
 			array(
@@ -854,3 +870,154 @@ function bz_kit_title_prefix($title) {
 add_filter('the_title', 'bz_kit_title_prefix');
 
 /**/
+
+/* Get info on user so we can personalize the content */
+
+/**
+    fetches the user course ids from Canvas
+    you should call this function just once for an email address,
+    then cache it in a variable or even in the user $_SESSION, since
+    reading it each time can be slow.
+
+    Then just use something like `if(in_array(whatever, $that_list))` where
+    whatever is the course ids you are interested in to do your customization.
+
+    TEST EXAMPLE: print_r( bz_get_user_courses(wp_get_current_user()->user_email) );
+*/
+function bz_get_user_courses($lc_email) {
+    $ch = curl_init();
+    // Change stagingportal to portal here when going live!
+    curl_setopt($ch, CURLOPT_URL, 'https://stagingportal.bebraven.org/bz/courses_for_email?email=' . urlencode($lc_email));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $answer = curl_exec($ch);
+    curl_close($ch);
+
+    // trim off any cross-site get padding, if present,
+    // keeping just the json object
+    $answer = substr($answer, strpos($answer, "{"));
+    $obj = json_decode($answer, TRUE);
+    return $obj["course_ids"];
+}
+
+/* Get cohort's magic field answers: */
+/**
+	$magic_field_names is an array.
+
+	Need to define CANVAS_TOKEN defined in wp-config.php.
+
+	Returns an object with field names as keys, an object with student names as keys and values as, well, values.
+
+	example use:
+	print_r(get_cohort_magic_fields("admin@beyondz.org", ['dyc-industry-1', 'dyc-industry-2', 'dyc-industry-freeform-other']);
+*/
+function bz_get_cohort_magic_fields($lc_email, $magic_field_names) {
+
+	$names_url = "";
+	foreach($magic_field_names as $name)
+		$names_url .= "&fields[]=" . urlencode($name);
+
+	$ch = curl_init();
+	$url = 'https://stagingportal.bebraven.org/bz/magic_fields_for_cohort?email=' . urlencode($lc_email) . '&access_token=' . urlencode(CANVAS_TOKEN) . $names_url;
+	// Change stagingportal to portal here when going live!
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	$answer = curl_exec($ch);
+	curl_close($ch);
+
+	// trim off any cross-site get padding, if present,
+	// keeping just the json object
+	$answer = substr($answer, strpos($answer, "{"));
+	$obj = json_decode($answer, TRUE);
+	return $obj["answers"];
+}
+
+/* Add shortcode so we can embed cohort answers into a kit */
+function bz_show_cohort_magic_fields( $atts, $content = null) {
+
+    $a = shortcode_atts( array(
+    	// add a default attribute value: 
+        'fields' => array(),
+    ), $atts );
+
+
+	$current_user_email = wp_get_current_user()->user_email;
+	// FOR TESTING:
+	// $current_user_email = 'aalcones@fb.com';
+
+    // Let's see if the kit's designer has provided a list of magic fields as an attribute, and strip any spaces so the list can use either "mf1,mf2" or "mf1, mf2")
+    
+    $mfields = explode(',', str_replace(' ', '', $a['fields']) );
+    $answers = bz_get_cohort_magic_fields($current_user_email, $mfields);
+
+    $str_to_return = '';
+
+    if (!empty($answers)) {
+	    foreach ($answers as $question => $answer) {
+	    	$str_to_return .= '<div class="mf-answers"><h4 class="bz-question-meta">'.$question.'</h4><dl class="mf-answer">';
+	    	if (!empty($answer)) {
+	    		foreach ($answer as $fellow => $fanswer) {
+	    			$str_to_return .= '<dt>'.$fellow.'</dt>';
+	    			$str_to_return .= ($fanswer) ? '<dd>'.$fanswer.'</dd>' : '<dd class="na">'.__('N/A', 'bz').'</dd>';
+	    		}
+	    	}
+		$str_to_return .= '</dl></div>';
+	    }
+	}
+    return $str_to_return;
+
+}
+
+add_shortcode( 'cohort-answers', 'bz_show_cohort_magic_fields' );
+
+
+/* Add wrapping shortcodes to allow personalizing content by course.
+   Attributes include a comma-separated list of Course slugs and an indication of whether this is a block or inline elemnet. 
+
+   EXAMPLE OF INLINE CONTENT: As a fellow [course-specific scope="inline" courses="sjsu, run"]at one of our first two sites[/course-specific] you're expected to do great.
+
+   EXAMPLE OF BLOCK CONTENT:
+   [course-specific courses="run"]<h2>Here's what to do at RU-N:</h2>
+   <p>blah blah.</p>
+   [/course-specific]
+
+ */
+function bz_personalize_content_by_course( $atts, $content = null ) {
+	global $course;
+    $a = shortcode_atts( array(
+    	// add a default attribute value: 
+        'courses' => '',
+        'scope' => 'block',
+    ), $atts );
+
+    // See if the current course is in the attributes (treat it as a comma-separated list, and strip any spaces so whoever writes the list can use either "course1,course2" or "course1, course2")
+    if ( in_array( $course, explode(',', str_replace(' ', '', $a['courses']) ) ) ) {
+    	return '<'.$a['scope'].' class="bz-course-specific">'.$content.'</'.$a['scope'].'>';
+    }
+}
+
+add_shortcode( 'course-specific', 'bz_personalize_content_by_course' );
+
+/*
+	[take-attendance event="LL1"][/take-attendance]
+*/
+function bz_attendance($atts, $content = null) {
+    global $course;
+
+    $width = 100;
+    if(isset($atts["width"]))
+       $width = (int) $atts["width"];
+    if($width < 20)
+       $width = 100;
+
+    return "<iframe onload=\"
+        this.style.height = (30 + this.contentWindow.document.body.scrollHeight) + 'px';
+        this.style.border = 'none';
+        this.style.width = '".$width."%';
+        this.style.padding = '0px';
+        this.style.margin = '0 -8px';
+        var magic = this;
+        setTimeout(function() { magic.onload(); }, 1000);
+    \" src=\"/attendance.php?course_name=".htmlentities($course)."&amp;event_name=".htmlentities($atts["event"])."\"></iframe>";
+}
+
+add_shortcode( 'take-attendance', 'bz_attendance' );

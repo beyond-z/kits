@@ -58,7 +58,8 @@ abbr[title] {
 }
 
 b,
-strong {
+strong,
+dt {
 	font-weight: 700;
 }
 
@@ -67,7 +68,8 @@ small {
 }
 
 sub,
-sup {
+sup,
+.bz-question-meta {
 	font-size: 75%;
 	line-height: 0;
 	position: relative;

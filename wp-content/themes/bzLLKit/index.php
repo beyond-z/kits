@@ -17,19 +17,52 @@
 get_header(); ?>
 	<div id="primary" class="content-area">
 		<main id="main" class="site-main" role="main">
-
-			<?php
-			// List the courses:
+			<?php 
+			
+			// Build the query to get the user's courses:
 			$args = array (
-				'post_type'              => array( 'course' ),
-				'post_status'            => array( 'publish' ),
-				'nopaging'               => true,
-				'posts_per_page'         => '-1',
-				'order'                  => 'ASC',
-				'orderby'                => 'post_title',
+				'post_type'             => array( 'course' ),
+				'post_status'           => array( 'publish' ),
+				'nopaging'              => true,
+				'posts_per_page'        => '-1',
+				'order'                 => 'ASC',
+				'orderby'               => 'post_title',
 			);
+
+			// If user isn't part of Braven staff, limit them 
+			// to view courses they're associated with on the Portal,
+			// by adding an argument to the query:
+
+			$current_user_email = wp_get_current_user()->user_email;
+			// FOR TESTING:
+			$current_user_email = 'aalcones@fb.com';
+
+			if ( strpos($current_user_email, 'bebraven.org') === FALSE) {
+				$user_courses = bz_get_user_courses($current_user_email);
+				$args['meta_query']	= array(
+					'relation'		=> 'AND',
+					array(
+						'key'	 	=> 'bz_course_attributes_portal_id',
+						'value'	  	=> $user_courses,
+						'compare' 	=> 'IN',
+					),
+				);
+			}
+
 			$courses = new WP_Query( $args );
-			if ( $courses->have_posts() ) { ?>
+			
+			if ( $courses->found_posts == 1 ) {
+				// If the user only has one course, might as well 
+				// redirect them to it:
+				$courses->the_post();
+				?>
+				<script>
+					location.replace("<?php the_permalink(); ?>");
+				</script>
+				<?php
+			} elseif ( $courses->have_posts() ) { 
+				// In case of more than one course:
+				?>
 				<h2><?php echo __('Please select course:', 'bz');?></h2>				
 				<table id="courses">
 					<?php // loop through the courses:
@@ -57,13 +90,13 @@ get_header(); ?>
 					} //end while ?>
 					</table><!-- #courses -->
 				<?php 
-				} else {
-					// no posts found
-				}
-				
-				// Restore original Post Data
-				wp_reset_postdata();	
-				?>
+			} else {
+				// no posts found
+			}
+			
+			// Restore original Post Data
+			wp_reset_postdata();	
+			?>
 		</main><!-- .site-main -->
 	</div><!-- .content-area -->
 
