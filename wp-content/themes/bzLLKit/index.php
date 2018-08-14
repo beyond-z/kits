@@ -33,10 +33,9 @@ get_header(); ?>
 			// to view courses they're associated with on the Portal,
 			// by adding an argument to the query:
 
-			$current_user_email = wp_get_current_user()->user_email;
+			// $current_user_email = wp_get_current_user()->user_email;
 			// FOR TESTING:
-			$current_user_email = 'aalcones@fb.com';
-
+			/*
 			if ( strpos($current_user_email, 'bebraven.org') === FALSE) {
 				$user_courses = bz_get_user_courses($current_user_email);
 				$args['meta_query']	= array(
@@ -48,7 +47,7 @@ get_header(); ?>
 					),
 				);
 			}
-
+			*/
 			$courses = new WP_Query( $args );
 			
 			if ( $courses->found_posts == 1 ) {
