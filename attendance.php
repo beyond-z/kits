@@ -307,10 +307,10 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 	else if(isset($_GET["course_name"])) {
 		switch($_GET["course_name"]) {
 			case "sjsu":
-				$course_id = 40;
+				$course_id = 45;
 			break;
 			case "run":
-				$course_id = 41;
+				$course_id = 49;
 			break;
 			case "nlu":
 				$course_id = 39;
@@ -584,9 +584,13 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 	It can also display just one column at a time.
 	-->
 
-	Attendance for <?php echo htmlentities($single_event ? $event_name : "all LLs/events"); ?>
-
 	<?php
+		if(count($student_list) != 0) {
+	?>
+		Attendance for <?php echo htmlentities($single_event ? $event_name : "all LLs/events"); ?>
+	<?php
+		}
+
 		if($is_staff) {
 	?>
 		<form>
@@ -615,6 +619,10 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 		</form>
 	<?php
 		}
+
+		if(count($student_list) == 0) {
+			echo "<p>The cohort leader should now take attendance.</p>";
+		} else {
 	?>
 
 		<?php
@@ -665,10 +673,10 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 			else
 				echo "</tr>";
 			}
-			if($tag == "li")
+			if($tag == "li") {
 				echo "</ol><a href=\"attendance.php?course_id=$course_id&amp;lc=".urlencode($lc_email)."\" target=\"_BLANK\">See All LLs/Events</a>";
 				if($is_staff) echo " | ";
-			else {
+			} else {
 				echo "<tr><th>Total</th>";
 				foreach($events as $event) {
 					echo "<td>";
@@ -689,6 +697,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 			if($is_staff) { ?>
 					<a href="attendance.php?course_id=<?php echo (int) $course_id;?>&download=csv">Download CSV</a>
 			<?php	 }
+			}
 		?>
 </body>
 </html>
