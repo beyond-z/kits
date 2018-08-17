@@ -1017,7 +1017,7 @@ function bz_attendance($atts, $content = null) {
         this.style.margin = '0 -8px';
         var magic = this;
         setTimeout(function() { magic.onload(); }, 1000);
-    \" src=\"/attendance.php?course_name=".htmlentities($course)."&amp;event_name=".htmlentities($atts["event"])."\"></iframe>";
+    \" src=\"/attendance.php?course_name=".htmlentities(urlencode($course))."&amp;event_name=".htmlentities(urlencode($atts["event"]))."\"></iframe>";
 }
 
 add_shortcode( 'take-attendance', 'bz_attendance' );
