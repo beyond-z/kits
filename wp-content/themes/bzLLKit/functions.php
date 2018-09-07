@@ -916,9 +916,23 @@ function bz_get_cohort_magic_fields($lc_email, $magic_field_names) {
 	foreach($magic_field_names as $name)
 		$names_url .= "&fields[]=" . urlencode($name);
 
+	$course_url = "";
+	if(isset($_GET["bzcourse"])) {
+		switch($_GET["bzcourse"]) {
+			case "sjsu":
+				$course_url = "&course_id=45";
+			break;
+			case "run":
+				$course_url = "&course_id=49";
+			break;
+			case "nlu":
+				$course_url = "&course_id=39";
+			break;
+		}
+	}
+
 	$ch = curl_init();
-	$url = 'https://stagingportal.bebraven.org/bz/magic_fields_for_cohort?email=' . urlencode($lc_email) . '&access_token=' . urlencode(CANVAS_TOKEN) . $names_url;
-	// Change stagingportal to portal here when going live!
+	$url = 'https://'.BRAVEN_PORTAL_DOMAIN.'/bz/magic_fields_for_cohort?email=' . urlencode($lc_email) . '&access_token=' . urlencode(CANVAS_TOKEN) . $names_url . $course_url;
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$answer = curl_exec($ch);
