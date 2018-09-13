@@ -348,7 +348,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
 				if($enrollment["type"] == "TaEnrollment") {
-					if($lc != null && $enrollment["email"] == $lc)
+					if($lc != null && ($enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
 						$keep_this_one = true;
 				}
 				if($enrollment["type"] == "StudentEnrollment") {
