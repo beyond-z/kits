@@ -766,9 +766,12 @@ a:hover {
 	a[href^="http"] {
 		color: inherit;
 	}
-	a[href^="http"]:after{
+	a[href^="http"]:after {
 		content:" (" attr(href) ")";
 		display: inline;
 		white-space: normal;
+	}
+	iframe {
+		display:none;
 	}
 }
