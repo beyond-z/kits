@@ -124,6 +124,8 @@ function get_all_events($course_id) {
 			attendance_events
 		WHERE
 			course_id = ?
+		ORDER BY
+			event_time
 	");
 
 	$result = array();
@@ -293,6 +295,52 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 		);
 	}
 
+	function url_for_course($course) {
+		$url = "attendance.php?";
+		if((int) $course)
+			$url .= "course_id=".urlencode($course);
+		else
+			$url .= "course_name=".urlencode($course);
+
+		foreach($_GET as $k => $v) {
+			if($k == "course_id")
+				continue;
+			if($k == "course_name")
+				continue;
+
+			$url .= "&" . urlencode($k) . "=" . urlencode($v);
+		}
+
+		return $url;
+	}
+
+	function get_user_course_id($email) {
+		global $WP_CONFIG;
+
+		$ch = curl_init();
+		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/bz/courses_for_email?email='.(urlencode($email)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+		// Change stagingportal to portal here when going live!
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$answer = curl_exec($ch);
+		curl_close($ch);
+
+		// trim off any cross-site get padding, if present,
+		// keeping just the json object
+		$answer = substr($answer, strpos($answer, "{"));
+		$obj = json_decode($answer, TRUE);
+
+		$arr = $obj["course_ids"];
+		$cnt = count($arr);
+
+		foreach($arr as $i)
+			if($i == 45 || $i == 49 || $i == 39)
+				return $i;
+		if($cnt == 0)
+			return 0;
+		return $arr[$cnt - 1];
+	}
+
 	if(isset($_POST["operation"])) {
 		set_attendance($_POST["event_id"], $_POST["student_id"], $_POST["present"]);
 		exit;
@@ -306,6 +354,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 		$course_id = $_GET["course_id"];
 	else if(isset($_GET["course_name"])) {
 		switch($_GET["course_name"]) {
+			// when updating this, also update the if above in get_user_course_id
 			case "sjsu":
 				$course_id = 45;
 			break;
@@ -319,7 +368,19 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 	}
 
 	if($course_id == 0) {
-		header("Location: attendance.php?course_name=nlu");
+		$course_id = get_user_course_id($lc_email);
+		if($course_id == 0) {
+		?>
+			Select your course:<br /><br />
+
+			<a href="<?php echo url_for_course('sjsu'); ?>">SJSU</a><br />
+			<a href="<?php echo url_for_course('run'); ?>">R-UN</a><br />
+			<a href="<?php echo url_for_course('nlu'); ?>">NLU</a><br />
+		<?php
+		} else {
+			// redirect to their course
+			header("Location: " . url_for_course($course_id));
+		}
 		exit;
 	}
 
