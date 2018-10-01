@@ -1030,7 +1030,10 @@ function bz_attendance($atts, $content = null) {
         this.style.padding = '0px';
         this.style.margin = '0 -8px';
         var magic = this;
-        setTimeout(function() { magic.onload(); }, 1000);
+	if(!this.hasAttribute('data-first')) {
+		this.setAttribute('data-first', 'set');
+        	setTimeout(function() { magic.onload(); }, 1000);
+	}
     \" src=\"/attendance.php?course_name=".htmlentities(urlencode($course))."&amp;event_name=".htmlentities(urlencode($atts["event"]))."\"></iframe>";
 }
 
