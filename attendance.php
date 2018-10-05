@@ -241,6 +241,18 @@ function sso() {
 // returns the currently logged in user, or redirects+exits to SSO
 function requireLogin() {
 	if(!isset($_SESSION["user"])) {
+
+		if(!isset($_GET["tried_reload"]) && isset($_GET["event_name"]) && strpos($_GET["event_name"], "1:1") !== FALSE) {
+			// this is a filthy hack, but since SSO is a shared resource, we don't
+			// want to hit it twice at the same time. We put the 1:1 event right next
+			// to the regular events on the page a lot, and the browser loads them
+			// simultaneously. This hack just makes the 1:1 wait then refresh - allowing
+			// the other one to finish first, then we get the session from that.
+			sleep(2);
+			header("Location: " . bz_current_full_url() . "&tried_reload");
+			exit;
+		}
+
 		if(!isset($_GET["dosso"])) {
 			$_SESSION["coming_from"] = bz_current_full_url();
 			unset($_SESSION["sso_service"]);
