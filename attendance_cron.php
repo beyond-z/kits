@@ -71,7 +71,7 @@ function get_canvas_events($course_id) {
 	global $WP_CONFIG;
 
 	$ch = curl_init();
-	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?start_date=2018-10-09&context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$answer = curl_exec($ch);
@@ -247,6 +247,7 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 						switch($notify_method) {
 							case "sms":
 								send_sms($section["lc_phone"], "Don't forget to record attendance for tonight's Braven event! https://kits.bebraven.org/");
+								// FIXME: event_id in the url but it didn't all fit in the sms :(
 
 							break;
 							case "echo":
