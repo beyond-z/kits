@@ -150,6 +150,7 @@ function load_attendance_result($course_id, $event_name, $students_info) {
 	}
 
 	return array(
+		"event_id" => $event_id,
 		"present" => $result,
 		"recorded" => $recorded,
 		"student_count" => $student_count,
@@ -246,9 +247,7 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 						// nag necessary - 0% surely means no attendance was taken
 						switch($notify_method) {
 							case "sms":
-								send_sms($section["lc_phone"], "Don't forget to record attendance for tonight's Braven event! https://kits.bebraven.org/");
-								// FIXME: event_id in the url but it didn't all fit in the sms :(
-
+								send_sms($section["lc_phone"], "Don't forget to record attendance for tonight's Braven event! https://kits.bebraven.org/attendance.php?event_id={$res["event_id"]}");
 							break;
 							case "echo":
 							default:
