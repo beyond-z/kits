@@ -248,8 +248,7 @@ function requireLogin() {
 			// to the regular events on the page a lot, and the browser loads them
 			// simultaneously. This hack just makes the 1:1 wait then refresh - allowing
 			// the other one to finish first, then we get the session from that.
-			sleep(10);
-			header("Location: " . bz_current_full_url() . "&tried_reload");
+			echo "Please wait, confirming log in... <script>window.setTimeout(function() { location.href = location.href + '&tried_reload'; }, 10000);</script>";
 			exit;
 		}
 
