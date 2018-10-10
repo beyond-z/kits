@@ -187,7 +187,7 @@ function send_sms($to, $message) {
 	$answer = curl_exec($ch);
 	curl_close($ch);
 
-	//echo $answer;
+	echo "Twilio responded: $answer \n";
 }
 
 
