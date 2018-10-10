@@ -234,8 +234,10 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 
 				// if no lc, nobody to notify, can just skip.
 				//if($lc_email == "")
-				if($section["lc_phone"] == "")
+				if(!isset($section["lc_phone"]) || $section["lc_phone"] == "") {
+					echo "No phone for " . $section["name"] . "\n";
 					continue;
+				}
 
 				$res = load_attendance_result($course_id, $data["event"], $students);
 
