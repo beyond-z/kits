@@ -31,6 +31,30 @@ $pdo_opt = [
 
 $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTENDANCE_NAME"]};charset=utf8mb4", $WP_CONFIG["DB_USER"], $WP_CONFIG["DB_PASSWORD"], $pdo_opt);
 
+function get_lc_excused_status($event_id, $lc_email) {
+	global $pdo;
+
+	$statement = $pdo->prepare("
+		SELECT
+			substitute_name, substitute_email, substitute_phone
+		FROM
+			attendance_lc_absences
+		WHERE
+			event_id = ?
+			AND
+			lc_email = ?
+	");
+
+	$statement->execute(array($event_id, $lc_email));
+	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+		$row["excused"] = true;
+		return $row;
+	}
+
+	return array("excused" => false);
+}
+
+
 	function get_cohorts_info($course_id) {
 		global $WP_CONFIG;
 
@@ -221,10 +245,12 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 		foreach($ci["sections"] as $section) {
 			if($section["name"] == $data["cohort"]) {
 				$lc_email = "";
+				$lc_login_email = "";
 				$students = array();
 				foreach($section["enrollments"] as $enrollment) {
 					if($enrollment["type"] == "TaEnrollment") {
 						$lc_email = $enrollment["contact_email"];
+						$lc_login_email = $enrollment["email"];
 						if($lc_email == "")
 							$lc_email = $enrollment["email"];
 					} else if($enrollment["type"] == "StudentEnrollment") {
@@ -247,13 +273,24 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 				if($now - $when > 0 && $now - $when < 60 * 30) {
 					if($res["percent"] == 0) {
 						// nag necessary - 0% surely means no attendance was taken
-						switch($notify_method) {
-							case "sms":
-								send_sms($section["lc_phone"], "Don't forget to record attendance for tonight's Braven event! https://kits.bebraven.org/attendance.php?event_id={$res["event_id"]}");
-							break;
-							case "echo":
-							default:
-								echo "Attendance needed for: " . $data["cohort"] . " " . $section["lc_phone"] . " " . $lc_email . "\n";
+						$excused = get_lc_excused_status($res["event_id"], $lc_email);
+						// check both emails in case the excuse was filed under the login or contact one...
+						if(!$excused["excused"])
+							$excused = get_lc_excused_status($res["event_id"], $lc_login_email);
+
+						if($excused["excused"]) {
+							// if excused, just log it
+							echo "Attendance needed for: " . $data["cohort"] . " " . $section["lc_phone"] . " " . $lc_email . " **LC EXCUSED**\n";
+						} else {
+							// and if not excused, go ahead and nag them.
+							switch($notify_method) {
+								case "sms":
+									send_sms($section["lc_phone"], "Don't forget to record attendance for tonight's Braven event! https://kits.bebraven.org/attendance.php?event_id={$res["event_id"]}");
+								break;
+								case "echo":
+								default:
+									echo "Attendance needed for: " . $data["cohort"] . " " . $section["lc_phone"] . " " . $lc_email . "\n";
+							}
 						}
 					}
 				}
