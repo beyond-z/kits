@@ -45,10 +45,92 @@ SET NAMES utf8mb4;
 		PRIMARY KEY(event_id, person_id)
 	) DEFAULT CHARACTER SET=utf8mb4;
 
+	CREATE TABLE attendance_lc_absences (
+		event_id INTEGER NOT NULL,
+		lc_email VARCHAR(80) NOT NULL,
+
+		substitute_name TEXT NULL,
+		substitute_email TEXT NULL,
+		substitute_phone TEXT NULL,
+
+		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE,
+
+		PRIMARY KEY(event_id, lc_email)
+	) DEFAULT CHARACTER SET=utf8mb4;
+
 	COMMIT;
 */
 
 session_start();
+
+function set_lc_excused_status($event_id, $lc_email, $is_excused, $substitute_name, $substitute_email, $substitute_phone) {
+	global $pdo;
+
+	if($is_excused) {
+
+		$statement = $pdo->prepare("
+			INSERT INTO attendance_lc_absences
+				(event_id, lc_email, substitute_name, substitute_email, substitute_phone)
+			VALUES
+				(?, ?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE
+				substitute_name = ?,
+				substitute_email = ?,
+				substitute_phone = ?
+		");
+
+		$statement->execute(array(
+			// for the key
+			$event_id,
+			$lc_email,
+			// for the insert
+			$substitute_name,
+			$substitute_email,
+			$substitute_phone,
+			// for the update
+			$substitute_name,
+			$substitute_email,
+			$substitute_phone
+		));
+	} else {
+		// not excused = delete the excused row
+		$statement = $pdo->prepare("
+			DELETE FROM attendance_lc_absences
+			WHERE
+				event_id = ?
+				AND
+				lc_email = ?
+		");
+
+		$statement->execute(array(
+			$event_id,
+			$lc_email
+		));
+	}
+}
+
+function get_lc_excused_status($event_id, $lc_email) {
+	global $pdo;
+
+	$statement = $pdo->prepare("
+		SELECT
+			substitute_name, substitute_email, substitute_phone
+		FROM
+			attendance_lc_absences
+		WHERE
+			event_id = ?
+			AND
+			lc_email = ?
+	");
+
+	$statement->execute(array($event_id, $lc_email));
+	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+		$row["excused"] = true;
+		return $row;
+	}
+
+	return array("excused" => false);
+}
 
 function set_attendance($event_id, $person_id, $present) {
 	global $pdo;
@@ -353,7 +435,17 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 	}
 
 	if(isset($_POST["operation"])) {
-		set_attendance($_POST["event_id"], $_POST["student_id"], $_POST["present"]);
+		switch($_POST["operation"]) {
+			case "save":
+				set_attendance($_POST["event_id"], $_POST["student_id"], $_POST["present"]);
+			break;
+			case "excuse":
+				set_lc_excused_status($_POST["event_id"], $_POST["lc_email"], $_POST["excused"] == "true", null, null, null);
+				header("Location: attendance.php?event_id=".urlencode($_POST["event_id"])."&lc=".urlencode($_POST["lc_email"])."&course_id=".urlencode($_POST["course_id"]));
+			break;
+			default:
+				// this space intentionally left blank
+		}
 		exit;
 	}
 
@@ -520,6 +612,22 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 <head>
 <title>Attendance Tracker</title>
 <style>
+	form.basic {
+		display: inline;
+	}
+
+	form.basic input[type=submit] {
+		padding: 0px;
+		margin: 0px;
+		color: #378383;
+		background: none;
+		border: none;
+		font-size: 1rem;
+		cursor: pointer;
+		display: inline;
+		vertical-align: initial;
+	}
+
 	body {
 		font-family: Georgia, serif;
 		line-height: 1.2em;
@@ -706,7 +814,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 				echo "<table>";
 				echo "<tr><th>Student</th>";
 				foreach($events as $event)
-					echo "<th>".htmlentities($event["name"])."</th>";
+					echo "<th><a href=\"attendance.php?course_id=".urlencode($course_id)."&amp;lc=".urlencode($lc_email)."&amp;event_name=".urlencode($event["name"])."\">".htmlentities($event["name"])."</a></th>";
 				echo "<th>Total</th>";
 				echo "</tr>";
 				$tag = "td";
@@ -767,9 +875,34 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 				echo "</table>";
 			}
 			if($is_staff) { ?>
-					<a href="attendance.php?course_id=<?php echo (int) $course_id;?>&download=csv">Download CSV</a>
-			<?php	 }
+				<a href="attendance.php?course_id=<?php echo (int) $course_id;?>&download=csv">Download CSV</a>
+				<?php if($single_event) { ?>
+				|
+				<form class="basic" method="POST">
+					<input type="hidden" name="lc_email" value="<?php echo htmlentities($lc_email); ?>" />
+					<input type="hidden" name="event_id" value="<?php echo htmlentities($event_id); ?>" />
+					<input type="hidden" name="course_id" value="<?php echo htmlentities($course_id); ?>" />
+					<input type="hidden" name="operation" value="excuse" />
+					<?php
+						$lc_excused_status = get_lc_excused_status($event_id, $lc_email);
+						if($lc_excused_status["excused"] == true) {
+						?>
+							LC Excused
+							<input type="hidden" name="excused" value="false" />
+							<input type="submit" value="[Undo]" />
+						<?php
+						} else {
+						?>
+							<input type="hidden" name="excused" value="true" />
+							<input type="submit" value="Excuse LC From This Event" />
+					<?php
+						}
+					?>
+				</form>
+				<?php
+				}
 			}
+		}
 		?>
 </body>
 </html>
