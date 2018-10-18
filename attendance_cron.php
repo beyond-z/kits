@@ -236,8 +236,10 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 		$list[] = array("event" => $event_name, "cohort" => $cohort, "end_at" => $event["end_at"]);
 	}
 
-	if(empty($list))
+	if(empty($list)) {
+		echo "No events today\n";
 		return;
+	}
 
 	$ci = get_cohorts_info($course_id);
 
@@ -271,6 +273,7 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 				$when = strtotime($data["end_at"]);
 				// if the event ends in the next 15-30 mins
 				if($now - $when > -20 * 60 && $now - $when < 60 * 20) {
+					echo "Event {$data["event"]} happening...\n";
 					if($res["percent"] == 0) {
 						// nag necessary - 0% surely means no attendance was taken
 						$excused = get_lc_excused_status($res["event_id"], $lc_email);
@@ -304,6 +307,9 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 
 date_default_timezone_set("UTC");
 
+echo "*****\nRunning at " . date('r') . "\n";
+
 foreach(array(45, 49) as $course_id) {
+	echo "Checking course $course_id\n";
 	check_attendance_from_canvas($course_id, $WP_CONFIG["ATTENDANCE_TRACKER_NOTIFY_METHOD"]);
 }
