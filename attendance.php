@@ -324,13 +324,17 @@ function sso() {
 function requireLogin() {
 	if(!isset($_SESSION["user"])) {
 
-		if(!isset($_GET["tried_reload"]) && isset($_GET["event_name"]) && strpos($_GET["event_name"], "1:1") !== FALSE) {
+		if((!isset($_GET["tried_reload"]) || $_GET["tried_reload"] < 20) && isset($_GET["event_name"]) && strpos($_GET["event_name"], "1:1") !== FALSE) {
+			$count = 0;
+			if(isset($_GET["tried_reload"]))
+				$count = $_GET["tried_reload"];
+			$count++;
 			// this is a filthy hack, but since SSO is a shared resource, we don't
 			// want to hit it twice at the same time. We put the 1:1 event right next
 			// to the regular events on the page a lot, and the browser loads them
 			// simultaneously. This hack just makes the 1:1 wait then refresh - allowing
 			// the other one to finish first, then we get the session from that.
-			echo "Please wait, confirming log in... <script>window.setTimeout(function() { location.href = location.href + '&tried_reload'; }, 10000);</script>";
+			echo "Please wait, confirming log in... <script>window.setTimeout(function() { location.href = location.href + '&tried_reload=$count'; }, 2000);</script>";
 			exit;
 		}
 
@@ -679,6 +683,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 		http.onerror = function() {
 			ele.parentNode.classList.remove("saving");
 			ele.parentNode.classList.add("error-saving");
+			alert('It didn\'t save. Please make sure you are online and try again.');
 		};
 		http.onload = function() {
 			ele.parentNode.classList.remove("saving");
