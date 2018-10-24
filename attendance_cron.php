@@ -288,6 +288,7 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 							// and if not excused, go ahead and nag them.
 							switch($notify_method) {
 								case "sms":
+									echo "TEXTING FOR: " . $data["cohort"] . " " . $section["lc_phone"] . " " . $lc_email . "\n";
 									send_sms($section["lc_phone"], "Don't forget to record attendance for tonight's Braven event! https://kits.bebraven.org/attendance.php?event_id={$res["event_id"]}");
 								break;
 								case "echo":
