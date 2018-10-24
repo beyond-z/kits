@@ -273,7 +273,7 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 				$when = strtotime($data["end_at"]);
 				// if the event ends in the next 15-30 mins
 				if($now - $when > -20 * 60 && $now - $when < 60 * 20) {
-					echo "Event {$data["event"]} happening...\n";
+					echo "Event {$data["event"]} happening for cohort {$section["name"]}...\n";
 					if($res["percent"] == 0) {
 						// nag necessary - 0% surely means no attendance was taken
 						$excused = get_lc_excused_status($res["event_id"], $lc_email);
