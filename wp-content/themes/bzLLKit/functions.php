@@ -954,9 +954,16 @@ function bz_show_cohort_magic_fields( $atts, $content = null) {
     ), $atts );
 
 
-	$current_user_email = wp_get_current_user()->user_email;
-	// FOR TESTING:
-	// $current_user_email = 'aalcones@fb.com';
+    $current_user_email = wp_get_current_user()->user_email;
+    $is_admin = false;
+
+    $is_admin = strpos($current_user_email, "@beyondz.org") !== FALSE || strpos($current_user_email, "@bebraven.org") !== FALSE;
+
+    if($is_admin && isset($_GET["lc_email"]) && $_GET["lc_email"] != "")
+        $current_user_email = $_GET["lc_email"];
+
+    // FOR TESTING:
+    // $current_user_email = 'aalcones@fb.com';
 
     // Let's see if the kit's designer has provided a list of magic fields as an attribute, and strip any spaces so the list can use either "mf1,mf2" or "mf1, mf2")
     
