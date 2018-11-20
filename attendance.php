@@ -324,6 +324,14 @@ function sso() {
 function requireLogin() {
 	if(!isset($_SESSION["user"])) {
 
+		if(isset($_POST["operation"]) && $_POST["operation"] == "save") {
+			// this is them trying to save attendance with a bad session.
+			// need to tell it to log in somehow
+			echo "{\"error\":\"not_logged_in\"}";
+			exit;
+		}
+
+
 		if((!isset($_GET["tried_reload"]) || $_GET["tried_reload"] < 20) && isset($_GET["event_name"]) && strpos($_GET["event_name"], "1:1") !== FALSE) {
 			$count = 0;
 			if(isset($_GET["tried_reload"]))
@@ -686,6 +694,10 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 			alert('It didn\'t save. Please make sure you are online and try again.');
 		};
 		http.onload = function() {
+			if(http.responseText == "{\"error\":\"not_logged_in\"}") {
+				alert('Your login session expired. Please refresh the page and log back in, then finish attendance.');
+				return;
+			}
 			ele.parentNode.classList.remove("saving");
 			ele.parentNode.classList.add("saved");
 			setTimeout(function() {
