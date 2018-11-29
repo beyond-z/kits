@@ -14,6 +14,8 @@ function bzLoadWpConfig() {
 
 bzLoadWpConfig();
 
+require_once("courses.php");
+
 /*
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
