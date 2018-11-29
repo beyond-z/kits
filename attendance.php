@@ -439,7 +439,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 		$cnt = count($arr);
 
 		foreach($arr as $i)
-			if($i == 45 || $i == 49 || $i == 39)
+			if(in_array($i, array_values($braven_courses)))
 				return $i;
 		if($cnt == 0)
 			return 0;
@@ -468,17 +468,11 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 	if(isset($_GET["course_id"]))
 		$course_id = $_GET["course_id"];
 	else if(isset($_GET["course_name"])) {
-		switch($_GET["course_name"]) {
-			// when updating this, also update the if above in get_user_course_id
-			case "sjsu":
-				$course_id = 45;
-			break;
-			case "run":
-				$course_id = 49;
-			break;
-			case "nlu":
-				$course_id = 39;
-			break;
+		foreach($braven_courses as $name => $id) {
+			if($name == $_GET["course_name"]) {
+				$course_id = $id;
+				break;
+			}
 		}
 	}
 
