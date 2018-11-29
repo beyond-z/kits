@@ -914,6 +914,7 @@ function bz_get_user_courses($lc_email) {
 	print_r(get_cohort_magic_fields("admin@beyondz.org", ['dyc-industry-1', 'dyc-industry-2', 'dyc-industry-freeform-other']);
 */
 function bz_get_cohort_magic_fields($lc_email, $magic_field_names) {
+	global $braven_courses;
 
 	$names_url = "";
 	foreach($magic_field_names as $name)
