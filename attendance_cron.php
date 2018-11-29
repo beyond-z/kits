@@ -4,6 +4,8 @@
 if(php_sapi_name() != 'cli')
 	die();
 
+require_once("courses.php");
+
 $WP_CONFIG = array();
 
 function bzLoadWpConfig() {
@@ -310,7 +312,7 @@ date_default_timezone_set("UTC");
 
 echo "*****\nRunning at " . date('r') . "\n";
 
-foreach(array(45, 49) as $course_id) {
+foreach($braven_courses as $name => $course_id) {
 	echo "Checking course $course_id\n";
 	check_attendance_from_canvas($course_id, $WP_CONFIG["ATTENDANCE_TRACKER_NOTIFY_METHOD"]);
 }

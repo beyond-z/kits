@@ -32,6 +32,9 @@ if ( version_compare( $GLOBALS['wp_version'], '4.4-alpha', '<' ) ) {
 	require get_template_directory() . '/inc/back-compat.php';
 }
 
+/// pull in the shared courses definition from the 
+require_once(ABSPATH . "courses.php");
+
 //
 
 
@@ -911,6 +914,7 @@ function bz_get_user_courses($lc_email) {
 	print_r(get_cohort_magic_fields("admin@beyondz.org", ['dyc-industry-1', 'dyc-industry-2', 'dyc-industry-freeform-other']);
 */
 function bz_get_cohort_magic_fields($lc_email, $magic_field_names) {
+	global $braven_courses;
 
 	$names_url = "";
 	foreach($magic_field_names as $name)
@@ -918,16 +922,11 @@ function bz_get_cohort_magic_fields($lc_email, $magic_field_names) {
 
 	$course_url = "";
 	if(isset($_GET["bzcourse"])) {
-		switch($_GET["bzcourse"]) {
-			case "sjsu":
-				$course_url = "&course_id=45";
-			break;
-			case "run":
-				$course_url = "&course_id=49";
-			break;
-			case "nlu":
-				$course_url = "&course_id=39";
-			break;
+		foreach($braven_courses as $name => $id) {
+			if($name == $_GET["bzcourse"]) {
+				$course_url = "&course_id=$id";
+				break;
+			}
 		}
 	}
 
