@@ -1,6 +1,6 @@
 <?php
 	$braven_courses = array(
-		"sjsu" => 45,
-		"run" => 49,
-		"nlu" => 39
+		"sjsu" => 58,
+		"run" => 57,
+		"nlu" => 56
 	);
