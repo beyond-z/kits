@@ -535,6 +535,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 			}
 		}
 		unset($section);
+		usort($list, "cmp");
 		return $lc == null ? $list : array();
 	}
 
