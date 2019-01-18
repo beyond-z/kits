@@ -678,7 +678,7 @@ requireLogin();
 </style>
 <script>
 	function setSpecialStatus(course_id, student_id) {
-		var override = prompt("What status do you want them to have?");
+		var override = confirm("Mark the student as withdrawn from the course?");
 		if(override !== null) {
 			var http = new XMLHttpRequest();
 			http.open("POST", location.href, true);
@@ -690,7 +690,7 @@ requireLogin();
 			data += "&";
 			data += "student_id=" + encodeURIComponent(student_id);
 			data += "&";
-			data += "override=" + encodeURIComponent(override);
+			data += "override=" + encodeURIComponent("W");
 
 			http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
@@ -698,7 +698,6 @@ requireLogin();
 				alert("Save fail");
 			};
 			http.onload = function() {
-				alert("Saved!");
 			};
 
 			http.send(data);
