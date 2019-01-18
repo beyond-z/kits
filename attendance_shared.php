@@ -39,6 +39,74 @@ function get_lc_excused_status($event_id, $lc_email) {
 	return array("excused" => false);
 }
 
+function get_canvas_events($course_id) {
+	global $WP_CONFIG;
+
+	$ch = curl_init();
+	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	$answer = curl_exec($ch);
+	curl_close($ch);
+
+	//print_r($answer);
+
+	// trim off any cross-site get padding, if present,
+	// keeping just the json object
+	$answer = substr($answer, strpos($answer, "["));
+	$obj = json_decode($answer, true);
+
+	return $obj;
+}
+
+function get_canvas_learning_labs($course_id) {
+	$list = array();
+	$events = get_canvas_events($course_id);
+	foreach($events as $event) {
+		$title = $event["title"];
+		// the format here is "Learning Lab #: NAME (Cohort)"
+		// so gonna kinda fake-parse this. so hacky lololol
+
+		$matches = array();
+		preg_match('/[^:]+: ([^\(]+)\((.*)\)/', $title, $matches);
+
+		if(count($matches) < 2)
+			continue; // not actually one of these events
+
+		$event_name = trim($matches[1]);
+		$cohort = trim($matches[2]);
+		$list[] = array("event" => $event_name, "cohort" => $cohort, "end_at" => $event["end_at"]);
+	}
+
+	return $list;
+}
+
+function populate_times_from_canvas($course_id) {
+	$list = get_canvas_learning_labs($course_id);
+	foreach($list as $data) {
+		global $pdo;
+
+		echo "{$data["end_at"]} $course_id / {$data["event"]}";
+
+		$statement = $pdo->prepare("
+			UPDATE
+				attendance_events
+			SET
+				event_time = ?
+			WHERE
+				course_id = ?
+				AND
+				name = ?
+		");
+
+		$statement->execute(array(
+			$data["end_at"],
+			$course_id,
+			$data["event"]
+		));
+	}
+}
+
 function get_cohorts_info($course_id) {
 	global $WP_CONFIG;
 

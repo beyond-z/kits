@@ -1,6 +1,4 @@
 <?php
-	// FIXME: populate the event times from Canvas, ensure all are set in the db ahead of time.
-
 require_once("attendance_shared.php");
 
 /*
