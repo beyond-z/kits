@@ -1,20 +1,5 @@
 <?php
-$WP_CONFIG = array();
-
-function bzLoadWpConfig() {
-	global $WP_CONFIG;
-
-	$out = array();
-	preg_match_all("/define\('([A-Z_0-9]+)', '(.*)'\);/", file_get_contents("wp-config.php"), $out, PREG_SET_ORDER);
-
-	foreach($out as $match) {
-		$WP_CONFIG[$match[1]] = $match[2];
-	}
-}
-
-bzLoadWpConfig();
-
-require_once("courses.php");
+require_once("attendance_shared.php");
 
 /*
 
@@ -60,10 +45,22 @@ SET NAMES utf8mb4;
 		PRIMARY KEY(event_id, lc_email)
 	) DEFAULT CHARACTER SET=utf8mb4;
 
+	CREATE TABLE attendance_people_statuses (
+		id INTEGER AUTO_INCREMENT,
+		person_id INTEGER NOT NULL,
+		course_id INTEGER,
+		as_of DATETIME NOT NULL,
+		status VARCHAR(16),
+
+		PRIMARY KEY(id)
+	) DEFAULT CHARACTER SET=utf8mb4;
+
 	COMMIT;
 */
 
 session_start();
+
+date_default_timezone_set("UTC");
 
 function set_lc_excused_status($event_id, $lc_email, $is_excused, $substitute_name, $substitute_email, $substitute_phone) {
 	global $pdo;
@@ -111,27 +108,22 @@ function set_lc_excused_status($event_id, $lc_email, $is_excused, $substitute_na
 	}
 }
 
-function get_lc_excused_status($event_id, $lc_email) {
+function set_special_status($course_id, $student_id, $override) {
 	global $pdo;
 
 	$statement = $pdo->prepare("
-		SELECT
-			substitute_name, substitute_email, substitute_phone
-		FROM
-			attendance_lc_absences
-		WHERE
-			event_id = ?
-			AND
-			lc_email = ?
+		INSERT INTO attendance_people_statuses
+			(person_id, course_id, as_of, status)
+		VALUES
+			(?, ?, NOW(), ?)
 	");
 
-	$statement->execute(array($event_id, $lc_email));
-	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-		$row["excused"] = true;
-		return $row;
-	}
+	$statement->execute(array(
+		$student_id,
+		$course_id,
+		$override
+	));
 
-	return array("excused" => false);
 }
 
 function set_attendance($event_id, $person_id, $present) {
@@ -152,6 +144,20 @@ function set_attendance($event_id, $person_id, $present) {
 		$present,
 		$present
 	));
+
+	// We need to email staff if stuff changes after about thrusday at noon the week of the event.
+	$ei = get_event_info($event_id);
+	if($ei["event_time"]) {
+		$dt = new DateTime($ei["event_time"]);
+		$dt->modify("thursday noon"); // adjust to thursday when the report is pulled
+		$dt->modify("+7 hours"); // timezone adjustment from UTC; aims for 1pm pacific
+
+		if(time() > $dt->format("U")) {
+			mail("attendance-notifications@bebraven.org", "Attendance Changed", "{$ei["name"]} on $event_id changed the attendance report (user $person_id is marked ".($present ? "present" : "not present").")");
+		}
+	}
+
+
 }
 
 function get_event_info($event_id) {
@@ -266,13 +272,48 @@ function load_student_status($event_id, $students_info) {
 	$args = array_merge($args, $students);
 
 	$result = array();
+	$original_result = array();
 
-	foreach($students as $student)
+	foreach($students as $student) {
 		$result[$student] = 0;
+		$original_result[$student] = 0;
+	}
 
 	$statement->execute($args);
 	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-		$result[$row["person_id"]] = $row["present"];
+		// format it as a bool string here so we don't have to get ambiguity later with override strings
+		$result[$row["person_id"]] = $row["present"] ? "true" : "false";
+		$original_result[$row["person_id"]] = $row["present"] ? "true" : "false";
+	}
+
+	// and now we need to load overrides for withdrawn students, etc.
+
+	$statement = $pdo->prepare("
+		SELECT
+			person_id,
+			status
+		FROM
+			attendance_people_statuses
+		WHERE
+			course_id = (SELECT course_id FROM attendance_events WHERE id = ?)
+			AND
+			person_id IN  (".str_repeat('?,', count($students) - 1)."?)
+			AND
+			as_of < (SELECT event_time FROM attendance_events WHERE id = ?)
+		ORDER BY
+			as_of ASC -- the purpose here is to get the latest one last, so the loop below will defer to it. i really only want the max as_of that fits the othe requirements per person but idk how to express that in sql. meh.
+	");
+
+	$args[] = $event_id; // same args as before except for one more event id reference
+	$statement->execute($args);
+
+	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+		if(strlen($row["status"]) > 0) {
+			$result[$row["person_id"]] = $row["status"];
+		} else {
+			// if the override is blank, it means it was undone since now
+			$result[$row["person_id"]] = $original_result[$row["person_id"]];
+		}
 	}
 
 	return $result;
@@ -360,48 +401,6 @@ function requireLogin() {
 
 requireLogin();
 
-$pdo_opt = [
-	PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-	PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-	PDO::ATTR_EMULATE_PREPARES   => false,
-];
-
-$pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTENDANCE_NAME"]};charset=utf8mb4", $WP_CONFIG["DB_USER"], $WP_CONFIG["DB_PASSWORD"], $pdo_opt);
-
-	function get_cohorts_info($course_id) {
-		global $WP_CONFIG;
-
-		$ch = curl_init();
-		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/bz/course_cohort_information?course_ids[]='.((int) $course_id). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
-		// Change stagingportal to portal here when going live!
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		$answer = curl_exec($ch);
-		curl_close($ch);
-
-		// trim off any cross-site get padding, if present,
-		// keeping just the json object
-		$answer = substr($answer, strpos($answer, "{"));
-		$obj = json_decode($answer, TRUE);
-
-		$sections = $obj["courses"][0]["sections"];
-		$lcs = array();
-		$students = array();
-		foreach($sections as $section) {
-			foreach($section["enrollments"] as $enrollment) {
-				if($enrollment["type"] == "TaEnrollment")
-					$lcs[] = $enrollment;
-				if($enrollment["type"] == "StudentEnrollment")
-					$students[] = $enrollment;
-			}
-		}
-
-		return array(
-			"lcs" => $lcs,
-			"sections" => $sections
-		);
-	}
-
 	function url_for_course($course) {
 		$url = "attendance.php?";
 		if((int) $course)
@@ -453,6 +452,9 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 		switch($_POST["operation"]) {
 			case "save":
 				set_attendance($_POST["event_id"], $_POST["student_id"], $_POST["present"]);
+			break;
+			case "set_special_status":
+				set_special_status($_POST["course_id"], $_POST["student_id"], $_POST["override"]);
 			break;
 			case "excuse":
 				set_lc_excused_status($_POST["event_id"], $_POST["lc_email"], $_POST["excused"] == "true", null, null, null);
@@ -535,6 +537,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 			}
 		}
 		unset($section);
+		usort($list, "cmp");
 		return $lc == null ? $list : array();
 	}
 
@@ -582,7 +585,7 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 				$data[] = $lc["name"];
 				$data[] = $lc_email;
 				foreach($events as $event) {
-					$data[] = $student_status[$event["id"]][$student["id"]] ? "true" : "false";
+					$data[] = $student_status[$event["id"]][$student["id"]];
 				}
 
 				fputcsv($fp, $data);
@@ -604,6 +607,8 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 
 	function checkbox_for($student, $event_id) {
 		global $student_status;
+		$sta = $student_status[$event_id][$student["id"]];
+		if($sta == "true" || $sta == "false" || $sta == "") {
 		?>
 			<input
 				onchange="recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 1 : 0);"
@@ -611,10 +616,13 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 				data-event-id="<?php echo $event_id; ?>"
 				data-student-name="<?php echo htmlentities($student["name"]); ?>"
 				data-student-id="<?php echo htmlentities($student["id"]); ?>"
-				<?php if($student_status[$event_id][$student["id"]]) echo "checked=\"checked\""; ?>
+				<?php if($sta) echo "checked=\"checked\""; ?>
 			/>
 		<?php
-		return $student_status[$event_id][$student["id"]];
+		} else {
+			echo $sta;
+		}
+		return $sta;
 	}
 ?><!DOCTYPE html>
 <html>
@@ -669,6 +677,35 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 
 </style>
 <script>
+	function setSpecialStatus(course_id, student_id) {
+		var override = confirm("Mark the student as withdrawn from the course?");
+		if(override !== null) {
+			var http = new XMLHttpRequest();
+			http.open("POST", location.href, true);
+
+			var data = "";
+			data += "operation=" + encodeURIComponent("set_special_status");
+			data += "&";
+			data += "course_id=" + encodeURIComponent(course_id);
+			data += "&";
+			data += "student_id=" + encodeURIComponent(student_id);
+			data += "&";
+			data += "override=" + encodeURIComponent("W");
+
+			http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+			http.onerror = function() {
+				alert("Save fail");
+			};
+			http.onload = function() {
+			};
+
+			http.send(data);
+		}
+
+		return false;
+	}
+
 	function recordChange(ele, event_id, student_id, present) {
 		ele.parentNode.classList.add("saving");
 		ele.parentNode.classList.remove("error-saving");
@@ -839,7 +876,13 @@ $pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTEND
 				else {
 					echo "<tr>";
 					echo "<td>";
-					echo htmlentities($student["name"]);
+					if($is_staff) {
+						echo "<a href=\"#\" onclick=\"return setSpecialStatus(".htmlentities($course_id).", ".htmlentities(json_encode($student["id"])).");\">";
+						echo htmlentities($student["name"]);
+						echo "</a>";
+					} else {
+						echo htmlentities($student["name"]);
+					}
 					echo "</td>";
 				}
 
