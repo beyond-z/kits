@@ -43,7 +43,7 @@ function get_canvas_events($course_id) {
 	global $WP_CONFIG;
 
 	$ch = curl_init();
-	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?per_page=500&context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$answer = curl_exec($ch);
@@ -85,6 +85,9 @@ function populate_times_from_canvas($course_id) {
 	$list = get_canvas_learning_labs($course_id);
 	foreach($list as $data) {
 		global $pdo;
+
+		// translate to mysql format
+		$data["end_at"] = str_replace("T", " ", str_replace("Z", "", $data["end_at"])); 
 
 		echo "{$data["end_at"]} $course_id / {$data["event"]}";
 
