@@ -455,6 +455,7 @@ requireLogin();
 			break;
 			case "set_special_status":
 				set_special_status($_POST["course_id"], $_POST["student_id"], $_POST["override"]);
+				header("Location: attendance.php?course_id=".urlencode($_POST["course_id"]));
 			break;
 			case "excuse":
 				set_lc_excused_status($_POST["event_id"], $_POST["lc_email"], $_POST["excused"] == "true", null, null, null);
@@ -675,9 +676,39 @@ requireLogin();
 		text-decoration: underline;
 	}
 
+	#withdrawn_dialog {
+		position: fixed;
+		left: 0px;
+		right: 0px;
+		top: 0px;
+		bottom: 0px;
+		background-color: rgba(0, 0, 0, 0.6);
+		display: none;
+	}
+	#withdrawn_dialog > div {
+		position: fixed;
+		left: 25vw;
+		right: 25vw;
+		top: 25vh;
+		bottom: 25vh;
+		background: white;
+		padding: 2em;
+	}
+
 </style>
 <script>
+	// FIXME: make this a multi-select UI and maybe be able to set the effective date
 	function setSpecialStatus(course_id, student_id) {
+
+		var dialog = document.getElementById("withdrawn_dialog");
+		var form = dialog.querySelector("form");
+
+		form.elements["course_id"].value = course_id;
+		form.elements["student_id"].value = student_id;
+
+		dialog.style.display = "block";
+
+		/*
 		var override = confirm("Mark the student as withdrawn from the course?");
 		if(override !== null) {
 			var http = new XMLHttpRequest();
@@ -702,6 +733,7 @@ requireLogin();
 
 			http.send(data);
 		}
+		*/
 
 		return false;
 	}
@@ -961,5 +993,25 @@ requireLogin();
 			}
 		}
 		?>
+
+<div id="withdrawn_dialog">
+	<div>
+		<form method="POST">
+			Set status to:
+			<input type="hidden" name="operation" value="set_special_status" />
+			<input type="hidden" name="course_id" value="" />
+			<input type="hidden" name="student_id" value="" />
+			<select name="override">
+				<option value="W">Withdrawn</option>
+				<option value="">Normal</option>
+			</select>
+			<input type="submit" value="Update" />
+
+			<br />
+			<br />
+			<button type="button" onclick="document.getElementById('withdrawn_dialog').style.display = '';">Cancel</button>
+		</form>
+	</div>
+
 </body>
 </html>

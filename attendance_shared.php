@@ -39,11 +39,17 @@ function get_lc_excused_status($event_id, $lc_email) {
 	return array("excused" => false);
 }
 
-function get_canvas_events($course_id) {
+function get_canvas_events($course_id, $start_date, $end_date) {
 	global $WP_CONFIG;
 
+	$additional = "";
+	if($start_date !== null)
+		$additional .= "&start_date=".urlencode($start_date);
+	if($end_date !== null)
+		$additional .= "&end_date=".urlencode($end_date);
+
 	$ch = curl_init();
-	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?per_page=500&context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]) . $additional;
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$answer = curl_exec($ch);
@@ -59,9 +65,9 @@ function get_canvas_events($course_id) {
 	return $obj;
 }
 
-function get_canvas_learning_labs($course_id) {
+function get_canvas_learning_labs($course_id, $start_date = null, $end_date = null) {
 	$list = array();
-	$events = get_canvas_events($course_id);
+	$events = get_canvas_events($course_id, $start_date, $end_date);
 	foreach($events as $event) {
 		$title = $event["title"];
 		// the format here is "Learning Lab #: NAME (Cohort)"
@@ -82,9 +88,13 @@ function get_canvas_learning_labs($course_id) {
 }
 
 function populate_times_from_canvas($course_id) {
-	$list = get_canvas_learning_labs($course_id);
+	// just want all times ever
+	$list = get_canvas_learning_labs($course_id, '2000-01-01', '2300-12-31');
 	foreach($list as $data) {
 		global $pdo;
+
+		// translate to mysql format
+		$data["end_at"] = str_replace("T", " ", str_replace("Z", "", $data["end_at"])); 
 
 		echo "{$data["end_at"]} $course_id / {$data["event"]}";
 
