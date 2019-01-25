@@ -275,8 +275,8 @@ function load_student_status($event_id, $students_info) {
 	$original_result = array();
 
 	foreach($students as $student) {
-		$result[$student] = 0;
-		$original_result[$student] = 0;
+		$result[$student] = "false";
+		$original_result[$student] = "false";
 	}
 
 	$statement->execute($args);
