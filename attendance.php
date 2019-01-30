@@ -623,7 +623,7 @@ requireLogin();
 		} else {
 			echo $sta;
 		}
-		return $sta;
+		return $sta == "true" || $sta == "W";
 	}
 ?><!DOCTYPE html>
 <html>
