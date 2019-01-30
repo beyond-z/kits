@@ -617,7 +617,7 @@ requireLogin();
 				data-event-id="<?php echo $event_id; ?>"
 				data-student-name="<?php echo htmlentities($student["name"]); ?>"
 				data-student-id="<?php echo htmlentities($student["id"]); ?>"
-				<?php if($sta) echo "checked=\"checked\""; ?>
+				<?php if($sta == "true") echo "checked=\"checked\""; ?>
 			/>
 		<?php
 		} else {
