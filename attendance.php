@@ -518,6 +518,8 @@ requireLogin();
 	function get_student_list($lc) {
 		global $cohort_info;
 
+		$already_there = array();
+
 		$list = array();
 		$keep_this_one = false;
 		foreach($cohort_info["sections"] as $section) {
@@ -529,7 +531,14 @@ requireLogin();
 				}
 				if($enrollment["type"] == "StudentEnrollment") {
 					$students[] = $enrollment;
-					$list[] = $enrollment;
+					// filter duplicate IDs; can happen on NLU for example
+					// where students are in two cohorts. The above one is NOT
+					// filtered because that is cohort-specific, but the bottom
+					// one IS filtered because that is a global list.
+					if(!isset($already_there[$enrollment["id"]])) {
+						$list[] = $enrollment;
+						$already_there[$enrollment["id"]] = true;
+					}
 				}
 			}
 			if($keep_this_one) {
@@ -953,7 +962,7 @@ requireLogin();
 					$total = 0;
 					foreach($student_status[$event["id"]] as $status) {
 						$total += 1;
-						if($status == "true" || $status == "W")
+						if($status)
 							$there += 1;
 					}
 					echo "<span data-total=\"$total\" data-there=\"$there\" id=\"percent-{$event["id"]}\" class=\"percent\">" . round($there * 100 / $total) . "</span>%";
