@@ -953,7 +953,7 @@ requireLogin();
 					$total = 0;
 					foreach($student_status[$event["id"]] as $status) {
 						$total += 1;
-						if($status)
+						if($status == "true" || $status == "W")
 							$there += 1;
 					}
 					echo "<span data-total=\"$total\" data-there=\"$there\" id=\"percent-{$event["id"]}\" class=\"percent\">" . round($there * 100 / $total) . "</span>%";
