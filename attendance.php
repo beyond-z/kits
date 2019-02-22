@@ -28,8 +28,10 @@ SET NAMES utf8mb4;
 		event_id INTEGER NOT NULL,
 		person_id INTEGER NOT NULL,
 		present INTEGER NULL, -- null means unknown, 0 means no, 1 means there, 2 means late
-		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE,
-		PRIMARY KEY(event_id, person_id)
+		dummy_id INTEGER NOT NULL AUTO_INCREMENT,
+		PRIMARY_KEY (dummy_id),
+		UNIQUE KEY unique_index (event_id, person_id),
+		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE
 	) DEFAULT CHARACTER SET=utf8mb4;
 
 	CREATE TABLE attendance_lc_absences (
@@ -39,10 +41,11 @@ SET NAMES utf8mb4;
 		substitute_name TEXT NULL,
 		substitute_email TEXT NULL,
 		substitute_phone TEXT NULL,
+		dummy_id INTEGER NOT NULL AUTO_INCREMENT,
 
-		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE,
-
-		PRIMARY KEY(event_id, lc_email)
+		PRIMARY KEY (dummy_id),
+		UNIQUE KEY unique_index (event_id, lc_email),
+		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE
 	) DEFAULT CHARACTER SET=utf8mb4;
 
 	CREATE TABLE attendance_people_statuses (
@@ -54,6 +57,7 @@ SET NAMES utf8mb4;
 
 		PRIMARY KEY(id)
 	) DEFAULT CHARACTER SET=utf8mb4;
+
 
 	COMMIT;
 */

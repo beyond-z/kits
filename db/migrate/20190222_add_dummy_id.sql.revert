@@ -1,0 +1,11 @@
+USE braven_attendance;
+ALTER TABLE attendance_people DROP COLUMN dummy_id, ADD PRIMARY KEY(event_id, person_id), DROP INDEX unique_index;
+
+USE braven_attendance;
+ALTER TABLE attendance_lc_absences DROP COLUMN dummy_id, ADD PRIMARY KEY(event_id, lc_email), DROP INDEX unique_index;
+
+USE wordpress;
+ALTER TABLE bz_term_relationships DROP COLUMN dummy_id, ADD PRIMARY KEY(object_id, term_taxonomy_id), DROP INDEX unique_index;
+
+USE wordpress;
+ALTER TABLE wp_term_relationships DROP COLUMN dummy_id, ADD PRIMARY KEY(object_id, term_taxonomy_id), DROP INDEX unique_index;
