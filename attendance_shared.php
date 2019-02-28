@@ -117,6 +117,10 @@ function populate_times_from_canvas($course_id) {
 	}
 }
 
+function isTa($user_email, $cohort_info) {
+	return in_array($user_email, $cohort_info["tas"]);
+}
+
 function get_cohorts_info($course_id) {
 	global $WP_CONFIG;
 
@@ -136,6 +140,7 @@ function get_cohorts_info($course_id) {
 	$sections = $obj["courses"][0]["sections"];
 	$lcs = array();
 	$students = array();
+	$tas = array();
 	foreach($sections as $section) {
 		foreach($section["enrollments"] as $enrollment) {
 			if($enrollment["type"] == "TaEnrollment")
@@ -143,10 +148,13 @@ function get_cohorts_info($course_id) {
 			if($enrollment["type"] == "StudentEnrollment")
 				$students[] = $enrollment;
 		}
+		if(isset($section["ta_email"]))
+			$tas[] = $section["ta_email"];
 	}
 
 	return array(
 		"lcs" => $lcs,
+		"tas" => $tas,
 		"sections" => $sections
 	);
 }

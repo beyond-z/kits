@@ -469,6 +469,8 @@ requireLogin();
 
 
 	$is_staff = strpos($_SESSION["user"], "@bebraven.org") !== FALSE || strpos($_SESSION["user"], "@beyondz.org") !== FALSE;
+
+	// this is set temporarily to figure out the course, then later lc_email is set again
 	$lc_email = ($is_staff && isset($_REQUEST["lc"]) && $_REQUEST["lc"] != "") ? $_REQUEST["lc"] : $_SESSION["user"];
 	$course_id = 0;
 	if(isset($_GET["course_id"]))
@@ -515,6 +517,12 @@ requireLogin();
 
 	$cohort_info = get_cohorts_info($course_id);
 
+	$can_see_all = $is_staff || isTa($_SESSION["user"], $cohort_info);
+
+	// now lc_email is set again based on the new knowledge about who is a TA in the course
+	// so both sets of this lc_email variable are important!
+	$lc_email = ($can_see_all && isset($_REQUEST["lc"]) && $_REQUEST["lc"] != "") ? $_REQUEST["lc"] : $_SESSION["user"];
+
 	function get_student_list($lc) {
 		global $cohort_info;
 
@@ -556,7 +564,7 @@ requireLogin();
 	}
 
 	if(!isset($_GET["download"])) {
-		$student_list = get_student_list(((!isset($_GET["lc"]) || $_GET["lc"] == "All") && $is_staff) ? null : $lc_email);
+		$student_list = get_student_list(((!isset($_GET["lc"]) || $_GET["lc"] == "All") && $can_see_all) ? null : $lc_email);
 		$student_status = array();
 		if($event_id)
 			$student_status[$event_id] = load_student_status($event_id, $student_list);
@@ -863,7 +871,7 @@ requireLogin();
 	<?php
 		}
 
-		if($is_staff) {
+		if($can_see_all) {
 	?>
 		<form>
 			<input type="hidden" name="course_id" value="<?php echo (int) $course_id; ?>" />
