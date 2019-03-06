@@ -932,9 +932,14 @@ requireLogin();
 			}
 			$last_lc = "";
 			foreach($student_list as $student) {
-				if($tag == "li")
+				if($tag == "li") {
+					if($student["lc_name"] != $last_lc) {
+						echo "<h4>".(htmlentities($student["lc_name"]))."'s Cohort</h4>";
+						$last_lc = $student["lc_name"];
+					}
+
 					echo "<li><label>";
-				else {
+				} else {
 					if($student["lc_name"] != $last_lc) {
 						echo "<tr><th style=\"text-align: left;\" colspan=\"$columns\">".(htmlentities($student["lc_name"]))."'s Cohort</th></tr>";
 						$last_lc = $student["lc_name"];
