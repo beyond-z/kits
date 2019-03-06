@@ -301,7 +301,7 @@ function load_student_status($event_id, $students_info) {
 			AND
 			as_of < (SELECT event_time FROM attendance_events WHERE id = ?)
 		ORDER BY
-			as_of ASC -- the purpose here is to get the latest one last, so the loop below will defer to it. i really only want the max as_of that fits the othe requirements per person but idk how to express that in sql. meh.
+			as_of ASC -- the purpose here is to get the latest one last, so the loop below will defer to it. i really only want the max as_of that fits the othe requirements per person but idk how to express that in this version of mysql. meh.
 	");
 
 	$args[] = $event_id; // same args as before except for one more event id reference
@@ -533,6 +533,8 @@ requireLogin();
 		foreach($cohort_info["sections"] as $section) {
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
+				$enrollment["lc_name"] = $section["lc_name"];
+				$enrollment["lc_email"] = $section["lc_email"];
 				if($enrollment["type"] == "TaEnrollment") {
 					if($lc != null && ($enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
 						$keep_this_one = true;
@@ -560,6 +562,10 @@ requireLogin();
 	}
 
 	function cmp($a, $b) {
+		$lc = strcmp($a["lc_name"], $b["lc_name"]);
+		if($lc != 0)
+			return $lc;
+
 		return strcmp($a["name"], $b["name"]);
 	}
 
@@ -907,22 +913,32 @@ requireLogin();
 
 		<?php
 			$tag = "li";
+			$columns = 0;
 			if($single_event) {
 				$tag = "li";
 				echo "<ol>";
 			} else {
 				echo "<table>";
 				echo "<tr><th>Student</th>";
-				foreach($events as $event)
+				$columns++;
+				foreach($events as $event) {
 					echo "<th><a href=\"attendance.php?course_id=".urlencode($course_id)."&amp;lc=".urlencode($lc_email)."&amp;event_name=".urlencode($event["name"])."\">".htmlentities($event["name"])."</a></th>";
+					$columns++;
+				}
+				$columns++;
 				echo "<th>Total</th>";
 				echo "</tr>";
 				$tag = "td";
 			}
+			$last_lc = "";
 			foreach($student_list as $student) {
 				if($tag == "li")
 					echo "<li><label>";
 				else {
+					if($student["lc_name"] != $last_lc) {
+						echo "<tr><th style=\"text-align: left;\" colspan=\"$columns\">".(htmlentities($student["lc_name"]))."'s Cohort</th></tr>";
+						$last_lc = $student["lc_name"];
+					}
 					echo "<tr>";
 					echo "<td>";
 					if($is_staff) {
