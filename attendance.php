@@ -974,7 +974,7 @@ requireLogin();
 					echo "<li><label>";
 				} else {
 					if($student["lc_name"] != $last_lc) {
-						echo "<tr><th style=\"text-align: left;\" colspan=\"$columns\">".(htmlentities($student["lc_name"]))."'s Cohort</th></tr>";
+						echo "<tr><th style=\"text-align: left;\" colspan=\"$columns\"><abbr title=\"".(htmlentities($student["lc_name"]))."\">".htmlentities($student["section_name"])."</abbr></th></tr>";
 						$last_lc = $student["lc_name"];
 					}
 					echo "<tr>";
@@ -1023,9 +1023,11 @@ requireLogin();
 					$there = 0;
 					$total = 0;
 					foreach($student_status[$event["id"]] as $status) {
-						$total += 1;
-						if($status)
-							$there += 1;
+						if($status === "true" || $status === "false" || $status === "") {
+							$total += 1;
+							if($status === "true")
+								$there += 1;
+						}
 					}
 					echo "<span data-total=\"$total\" data-there=\"$there\" id=\"percent-{$event["id"]}\" class=\"percent\">" . round($there * 100 / $total) . "</span>%";
 					echo "</td>";
