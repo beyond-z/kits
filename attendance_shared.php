@@ -159,6 +159,19 @@ function get_cohorts_info($course_id) {
 	);
 }
 
+function log_nag($event_id, $lc_email, $answer) {
+	global $pdo;
+
+	$statement = $pdo->prepare("
+		INSERT INTO
+			attendance_nag_log
+			(event_id, date_sent, lc_email, raw_response)
+		VALUES
+			(?, NOW(), ?, ?)
+	");
+	$statement->execute(array($event_id, $lc_email, $answer));
+}
+
 $pdo_opt = [
 	PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
 	PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

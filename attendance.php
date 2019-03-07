@@ -58,6 +58,24 @@ SET NAMES utf8mb4;
 		PRIMARY KEY(id)
 	) DEFAULT CHARACTER SET=utf8mb4;
 
+	CREATE TABLE attendance_nag_log (
+		id INTEGER AUTO_INCREMENT,
+
+		event_id INTEGER NULL,
+		date_sent TIMESTAMP NOT NULL,
+
+		lc_email VARCHAR(80) NOT NULL,
+
+		raw_response TEXT NULL,
+
+		-- I want to keep the log even if the association is lost so we know who got spammed for deleted stuff.
+		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE SET NULL,
+
+		PRIMARY KEY(id)
+	) DEFAULT CHARACTER SET=utf8mb4;
+
+	CREATE INDEX nag_by_email ON attendance_nag_log(lc_email);
+	CREATE INDEX nag_by_time ON attendance_nag_log(date_sent);
 
 	COMMIT;
 */
@@ -539,6 +557,7 @@ requireLogin();
 			foreach($section["enrollments"] as $enrollment) {
 				$enrollment["lc_name"] = $section["lc_name"];
 				$enrollment["lc_email"] = $section["lc_email"];
+				$enrollment["section_name"] = $section["name"];
 				if($enrollment["type"] == "TaEnrollment") {
 					if($lc != null && ($enrollment["lc_email"] == $lc || $enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
 						$keep_this_one = true;
