@@ -974,7 +974,10 @@ requireLogin();
 					echo "<li><label>";
 				} else {
 					if($student["lc_name"] != $last_lc) {
-						echo "<tr><th style=\"text-align: left;\" colspan=\"$columns\"><abbr title=\"".(htmlentities($student["lc_name"]))."\">".htmlentities($student["section_name"])."</abbr></th></tr>";
+						$nag_count = 0;
+						echo "<tr><th style=\"text-align: left;\" colspan=\"$columns - 1\"><abbr title=\"".(htmlentities($student["lc_name"]))."\">".htmlentities($student["section_name"])."</abbr></th>";
+						echo "<td>$nag_count</td>";
+						echo "</tr>";
 						$last_lc = $student["lc_name"];
 					}
 					echo "<tr>";
