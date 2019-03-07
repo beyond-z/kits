@@ -536,7 +536,7 @@ requireLogin();
 				$enrollment["lc_name"] = $section["lc_name"];
 				$enrollment["lc_email"] = $section["lc_email"];
 				if($enrollment["type"] == "TaEnrollment") {
-					if($lc != null && ($enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
+					if($lc != null && ($enrollment["lc_email"] == $lc || $enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
 						$keep_this_one = true;
 				}
 				if($enrollment["type"] == "StudentEnrollment") {
@@ -606,8 +606,18 @@ requireLogin();
 				$data[] = $student["name"];
 				$data[] = $student["email"];
 				$data[] = $course_id;
-				$data[] = $lc["name"];
-				$data[] = $lc_email;
+
+				// use data from spreadsheet if available, use TA listing if not
+				if(isset($student["lc_name"]) && $student["lc_name"] != "")
+					$data[] = $lc["name"];
+				else
+					$data[] = $student["lc_name"];
+				if(isset($student["lc_email"]) && $student["lc_email"] != "")
+					$data[] = $lc["email"];
+				else
+					$data[] = $student["lc_email"];
+				// done
+
 				foreach($events as $event) {
 					$data[] = $student_status[$event["id"]][$student["id"]];
 				}
