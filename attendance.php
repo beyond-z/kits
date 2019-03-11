@@ -58,6 +58,24 @@ SET NAMES utf8mb4;
 		PRIMARY KEY(id)
 	) DEFAULT CHARACTER SET=utf8mb4;
 
+	CREATE TABLE attendance_nag_log (
+		id INTEGER AUTO_INCREMENT,
+
+		event_id INTEGER NULL,
+		date_sent TIMESTAMP NOT NULL,
+
+		lc_email VARCHAR(80) NOT NULL,
+
+		raw_response TEXT NULL,
+
+		-- I want to keep the log even if the association is lost so we know who got spammed for deleted stuff.
+		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE SET NULL,
+
+		PRIMARY KEY(id)
+	) DEFAULT CHARACTER SET=utf8mb4;
+
+	CREATE INDEX nag_by_email ON attendance_nag_log(lc_email);
+	CREATE INDEX nag_by_time ON attendance_nag_log(date_sent);
 
 	COMMIT;
 */
@@ -305,7 +323,7 @@ function load_student_status($event_id, $students_info) {
 			AND
 			as_of < (SELECT event_time FROM attendance_events WHERE id = ?)
 		ORDER BY
-			as_of ASC -- the purpose here is to get the latest one last, so the loop below will defer to it. i really only want the max as_of that fits the othe requirements per person but idk how to express that in sql. meh.
+			as_of ASC -- the purpose here is to get the latest one last, so the loop below will defer to it. i really only want the max as_of that fits the othe requirements per person but idk how to express that in this version of mysql. meh.
 	");
 
 	$args[] = $event_id; // same args as before except for one more event id reference
@@ -473,6 +491,8 @@ requireLogin();
 
 
 	$is_staff = strpos($_SESSION["user"], "@bebraven.org") !== FALSE || strpos($_SESSION["user"], "@beyondz.org") !== FALSE;
+
+	// this is set temporarily to figure out the course, then later lc_email is set again
 	$lc_email = ($is_staff && isset($_REQUEST["lc"]) && $_REQUEST["lc"] != "") ? $_REQUEST["lc"] : $_SESSION["user"];
 	$course_id = 0;
 	if(isset($_GET["course_id"]))
@@ -519,6 +539,12 @@ requireLogin();
 
 	$cohort_info = get_cohorts_info($course_id);
 
+	$can_see_all = $is_staff || isTa($_SESSION["user"], $cohort_info);
+
+	// now lc_email is set again based on the new knowledge about who is a TA in the course
+	// so both sets of this lc_email variable are important!
+	$lc_email = ($can_see_all && isset($_REQUEST["lc"]) && $_REQUEST["lc"] != "") ? $_REQUEST["lc"] : $_SESSION["user"];
+
 	function get_student_list($lc) {
 		global $cohort_info;
 
@@ -529,8 +555,11 @@ requireLogin();
 		foreach($cohort_info["sections"] as $section) {
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
+				$enrollment["lc_name"] = $section["lc_name"];
+				$enrollment["lc_email"] = $section["lc_email"];
+				$enrollment["section_name"] = $section["name"];
 				if($enrollment["type"] == "TaEnrollment") {
-					if($lc != null && ($enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
+					if($lc != null && ($enrollment["lc_email"] == $lc || $enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
 						$keep_this_one = true;
 				}
 				if($enrollment["type"] == "StudentEnrollment") {
@@ -556,11 +585,15 @@ requireLogin();
 	}
 
 	function cmp($a, $b) {
+		$lc = strcmp($a["lc_name"], $b["lc_name"]);
+		if($lc != 0)
+			return $lc;
+
 		return strcmp($a["name"], $b["name"]);
 	}
 
 	if(!isset($_GET["download"])) {
-		$student_list = get_student_list(((!isset($_GET["lc"]) || $_GET["lc"] == "All") && $is_staff) ? null : $lc_email);
+		$student_list = get_student_list(((!isset($_GET["lc"]) || $_GET["lc"] == "All") && $can_see_all) ? null : $lc_email);
 		$student_status = array();
 		if($event_id)
 			$student_status[$event_id] = load_student_status($event_id, $student_list);
@@ -596,8 +629,18 @@ requireLogin();
 				$data[] = $student["name"];
 				$data[] = $student["email"];
 				$data[] = $course_id;
-				$data[] = $lc["name"];
-				$data[] = $lc_email;
+
+				// use data from spreadsheet if available, use TA listing if not
+				if(isset($student["lc_name"]) && $student["lc_name"] != "")
+					$data[] = $lc["name"];
+				else
+					$data[] = $student["lc_name"];
+				if(isset($student["lc_email"]) && $student["lc_email"] != "")
+					$data[] = $lc["email"];
+				else
+					$data[] = $student["lc_email"];
+				// done
+
 				foreach($events as $event) {
 					$data[] = $student_status[$event["id"]][$student["id"]];
 				}
@@ -867,7 +910,7 @@ requireLogin();
 	<?php
 		}
 
-		if($is_staff) {
+		if($can_see_all) {
 	?>
 		<form>
 			<input type="hidden" name="course_id" value="<?php echo (int) $course_id; ?>" />
@@ -903,22 +946,40 @@ requireLogin();
 
 		<?php
 			$tag = "li";
+			$columns = 0;
 			if($single_event) {
 				$tag = "li";
 				echo "<ol>";
 			} else {
 				echo "<table>";
 				echo "<tr><th>Student</th>";
-				foreach($events as $event)
+				$columns++;
+				foreach($events as $event) {
 					echo "<th><a href=\"attendance.php?course_id=".urlencode($course_id)."&amp;lc=".urlencode($lc_email)."&amp;event_name=".urlencode($event["name"])."\">".htmlentities($event["name"])."</a></th>";
+					$columns++;
+				}
+				$columns++;
 				echo "<th>Total</th>";
 				echo "</tr>";
 				$tag = "td";
 			}
+			$last_lc = "";
 			foreach($student_list as $student) {
-				if($tag == "li")
+				if($tag == "li") {
+					if($student["lc_name"] != $last_lc) {
+						echo "<h4>".(htmlentities($student["lc_name"]))."'s Cohort</h4>";
+						$last_lc = $student["lc_name"];
+					}
+
 					echo "<li><label>";
-				else {
+				} else {
+					if($student["lc_name"] != $last_lc) {
+						$nag_count = 0;
+						echo "<tr><th style=\"text-align: left;\" colspan=\"$columns - 1\"><abbr title=\"".(htmlentities($student["lc_name"]))."\">".htmlentities($student["section_name"])."</abbr></th>";
+						echo "<td>$nag_count</td>";
+						echo "</tr>";
+						$last_lc = $student["lc_name"];
+					}
 					echo "<tr>";
 					echo "<td>";
 					if($is_staff) {
@@ -965,9 +1026,11 @@ requireLogin();
 					$there = 0;
 					$total = 0;
 					foreach($student_status[$event["id"]] as $status) {
-						$total += 1;
-						if($status)
-							$there += 1;
+						if($status === "true" || $status === "false" || $status === "") {
+							$total += 1;
+							if($status === "true")
+								$there += 1;
+						}
 					}
 					echo "<span data-total=\"$total\" data-there=\"$there\" id=\"percent-{$event["id"]}\" class=\"percent\">" . round($there * 100 / $total) . "</span>%";
 					echo "</td>";
