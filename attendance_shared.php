@@ -172,6 +172,24 @@ function log_nag($event_id, $lc_email, $answer) {
 	$statement->execute(array($event_id, $lc_email, $answer));
 }
 
+function get_nag_info($lc_email) {
+	global $pdo;
+
+	$statement = $pdo->prepare("
+		SELECT
+			count(id) AS count,
+			max(date_sent) AS last,
+			DATE_ADD(max(date_sent),INTERVAL 7 DAY) > NOW() AS recent
+		FROM
+			attendance_nag_log
+		WHERE
+			lc_email = ?
+	");
+
+	$statement->execute(array($lc_email));
+	return $statement->fetch();
+}
+
 $pdo_opt = [
 	PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
 	PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
