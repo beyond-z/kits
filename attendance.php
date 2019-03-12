@@ -570,7 +570,16 @@ requireLogin();
 					// one IS filtered because that is a global list.
 					if(!isset($already_there[$enrollment["id"]])) {
 						$list[] = $enrollment;
-						$already_there[$enrollment["id"]] = true;
+						$already_there[$enrollment["id"]] = count($list);
+					} else {
+						// it is there, but is the item we have now better?
+						// specifically, I want to have the LC email if we can.
+						$idx = $already_there[$enrollment["id"]];
+						if(!isset($list[$idx]["lc_email"]) || $list[$idx]["lc_email"] == "") {
+							$list[$idx] = $enrollment;
+							$already_there[$enrollment["id"]] = count($list);
+						}
+
 					}
 				}
 			}
@@ -974,9 +983,21 @@ requireLogin();
 					echo "<li><label>";
 				} else {
 					if($student["lc_name"] != $last_lc) {
-						$nag_count = 0;
-						echo "<tr><th style=\"text-align: left;\" colspan=\"$columns - 1\"><abbr title=\"".(htmlentities($student["lc_name"]))."\">".htmlentities($student["section_name"])."</abbr></th>";
-						echo "<td>$nag_count</td>";
+						echo "<tr><th style=\"text-align: left;\" colspan=\"".($columns)."\"><abbr title=\"".(htmlentities($student["lc_name"]))."\">".htmlentities($student["section_name"])."</abbr> ";
+
+						$nag_info = get_nag_info($student["lc_email"]);
+
+						$nag_count = $nag_info["count"];
+						$last_nag = $nag_info["last"];
+						$last_nag_recent = $nag_info["recent"];
+
+						if($nag_count > 0) {
+							echo "<abbr ".($last_nag_recent ? "" : "style=\"color: #999;\"")." title=\"$nag_count nag".(($nag_count == 1) ? "" : "s").", last $last_nag\">";
+							echo "&#9993;";
+							echo "</abbr>";
+						}
+
+						echo "</th>";
 						echo "</tr>";
 						$last_lc = $student["lc_name"];
 					}
