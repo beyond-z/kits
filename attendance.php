@@ -570,16 +570,15 @@ requireLogin();
 					// one IS filtered because that is a global list.
 					if(!isset($already_there[$enrollment["id"]])) {
 						$list[] = $enrollment;
-						$already_there[$enrollment["id"]] = count($list);
+						$already_there[$enrollment["id"]] = count($list) - 1;
 					} else {
 						// it is there, but is the item we have now better?
 						// specifically, I want to have the LC email if we can.
 						$idx = $already_there[$enrollment["id"]];
 						if(!isset($list[$idx]["lc_email"]) || $list[$idx]["lc_email"] == "") {
 							$list[$idx] = $enrollment;
-							$already_there[$enrollment["id"]] = count($list);
+							$already_there[$enrollment["id"]] = count($list) - 1;
 						}
-
 					}
 				}
 			}
