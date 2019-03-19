@@ -39,6 +39,7 @@ function get_lc_excused_status($event_id, $lc_email) {
 	return array("excused" => false);
 }
 
+
 function get_canvas_events($course_id, $start_date, $end_date) {
 	global $WP_CONFIG;
 
