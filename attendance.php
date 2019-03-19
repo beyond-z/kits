@@ -21,6 +21,9 @@ SET NAMES utf8mb4;
 		name TEXT NOT NULL,
 		event_time DATETIME,
 
+		sort_mode INTEGER NOT NULL DEFAULT 0,
+		send_nags BOOLEAN NOT NULL DEFAULT TRUE,
+
 		PRIMARY KEY (id)
 	) DEFAULT CHARACTER SET=utf8mb4;
 
@@ -83,6 +86,32 @@ SET NAMES utf8mb4;
 session_start();
 
 date_default_timezone_set("UTC");
+
+function set_event_sort_setting($event_id, $sort_mode) {
+	global $pdo;
+	$statement = $pdo->prepare("
+		UPDATE
+			attendance_events
+		SET
+			sort_mode = ?
+		WHERE
+			id = ?
+	");
+	$statement->execute(array($sort_mode, $event_id));
+}
+
+function set_event_nag_setting($event_id, $send_nags) {
+	global $pdo;
+	$statement = $pdo->prepare("
+		UPDATE
+			attendance_events
+		SET
+			send_nags = ?
+		WHERE
+			id = ?
+	");
+	$statement->execute(array($send_nags, $event_id));
+}
 
 function set_lc_excused_status($event_id, $lc_email, $is_excused, $substitute_name, $substitute_email, $substitute_phone) {
 	global $pdo;
@@ -187,7 +216,7 @@ function get_event_info($event_id) {
 
 	$statement = $pdo->prepare("
 		SELECT
-			id, name, event_time, course_id
+			id, name, event_time, course_id, send_nags, sort_mode
 		FROM
 			attendance_events
 		WHERE
@@ -207,7 +236,7 @@ function get_event_info_by_name($course_id, $event_name) {
 
 	$statement = $pdo->prepare("
 		SELECT
-			id, name, event_time, course_id
+			id, name, event_time, course_id, send_nags, sort_mode
 		FROM
 			attendance_events
 		WHERE
@@ -237,7 +266,7 @@ function get_all_events($course_id) {
 		WHERE
 			course_id = ?
 		ORDER BY
-			event_time
+			display_order, event_time
 	");
 
 	$result = array();
@@ -483,6 +512,16 @@ requireLogin();
 				set_lc_excused_status($_POST["event_id"], $_POST["lc_email"], $_POST["excused"] == "true", null, null, null);
 				header("Location: attendance.php?event_id=".urlencode($_POST["event_id"])."&lc=".urlencode($_POST["lc_email"])."&course_id=".urlencode($_POST["course_id"]));
 			break;
+			case "change_nag_setting":
+				// send_nags
+				set_event_nag_setting($_POST["event_id"], $_POST["send_nags"]);
+				header("Location: attendance.php?event_id=".urlencode($_POST["event_id"])."&lc=".urlencode($_POST["lc_email"])."&course_id=".urlencode($_POST["course_id"]));
+			break;
+			case "change_sort_mode":
+				// sort_mode
+				set_event_sort_setting($_POST["event_id"], $_POST["sort_mode"]);
+				header("Location: attendance.php?event_id=".urlencode($_POST["event_id"])."&lc=".urlencode($_POST["lc_email"])."&course_id=".urlencode($_POST["course_id"]));
+			break;
 			default:
 				// this space intentionally left blank
 		}
@@ -525,13 +564,16 @@ requireLogin();
 
 	$event_id = 0;
 	$event_name = "";
+	$event_info = null;
 	if(isset($_GET["event_id"]) && $_GET["event_id"] != "") {
 		$event_id = $_GET["event_id"];
-		$event_name = get_event_info($event_id)["name"];
+		$event_info = get_event_info($event_id);
+		$event_name = $event_info["name"];
 		$single_event = true;
 	} else if(isset($_GET["event_name"]) && $_GET["event_name"] != "") {
 		$event_name = $_GET["event_name"];
-		$event_id = get_event_info_by_name($course_id, $event_name)["id"];
+		$event_info = get_event_info_by_name($course_id, $event_name);
+		$event_id = $event_info["id"];
 		$single_event = true;
 	} else {
 		$single_event = false;
@@ -545,7 +587,7 @@ requireLogin();
 	// so both sets of this lc_email variable are important!
 	$lc_email = ($can_see_all && isset($_REQUEST["lc"]) && $_REQUEST["lc"] != "") ? $_REQUEST["lc"] : $_SESSION["user"];
 
-	function get_student_list($lc) {
+	function get_student_list($lc, $sort_method = 1) {
 		global $cohort_info;
 
 		$already_there = array();
@@ -583,16 +625,17 @@ requireLogin();
 				}
 			}
 			if($keep_this_one) {
-				usort($students, "cmp");
+				usort($students, "cmp".(int)$sort_method);
 				return $students;
 			}
 		}
 		unset($section);
-		usort($list, "cmp");
+		usort($list, "cmp".(int)$sort_method);
 		return $lc == null ? $list : array();
 	}
 
-	function cmp($a, $b) {
+	// note "cmp".(int)$sort_method
+	function cmp0($a, $b) {
 		$lc = strcmp($a["lc_name"], $b["lc_name"]);
 		if($lc != 0)
 			return $lc;
@@ -600,12 +643,20 @@ requireLogin();
 		return strcmp($a["name"], $b["name"]);
 	}
 
+	function cmp1($a, $b) {
+		return strcmp($a["name"], $b["name"]);
+	}
+
+
+
+
 	if(!isset($_GET["download"])) {
-		$student_list = get_student_list(((!isset($_GET["lc"]) || $_GET["lc"] == "All") && $can_see_all) ? null : $lc_email);
+		$student_list = array();
 		$student_status = array();
-		if($event_id)
+		$student_list = get_student_list(((!isset($_GET["lc"]) || $_GET["lc"] == "All") && $can_see_all) ? null : $lc_email, $event_info ? $event_info["sort_mode"] : 0);
+		if($event_id) {
 			$student_status[$event_id] = load_student_status($event_id, $student_list);
-		else {
+		} else {
 			$events = get_all_events($course_id);
 			foreach($events as $event) {
 				$student_status[$event["id"]] = load_student_status($event["id"], $student_list);
@@ -926,7 +977,7 @@ requireLogin();
 			<select name="lc">
 				<option>All</option>
 				<?php
-					usort($cohort_info["lcs"], "cmp");
+					usort($cohort_info["lcs"], "cmp1");
 					$lcs = $cohort_info["lcs"];
 					foreach($lcs as $lc) {
 						?>
@@ -974,8 +1025,8 @@ requireLogin();
 			$last_lc = "";
 			foreach($student_list as $student) {
 				if($tag == "li") {
-					if($student["lc_name"] != $last_lc) {
-						echo "<h4>".(htmlentities($student["lc_name"]))."'s Cohort</h4>";
+					if($event_info && $event_info["sort_mode"] == 0 && $student["lc_name"] != $last_lc) {
+						echo "<h4>".(htmlentities($student["section_name"]))."</h4>";
 						$last_lc = $student["lc_name"];
 					}
 
@@ -1083,6 +1134,36 @@ requireLogin();
 					<?php
 						}
 					?>
+				</form>
+				|
+				<form class="basic" method="POST">
+					<input type="hidden" name="lc_email" value="<?php echo htmlentities($lc_email); ?>" />
+					<input type="hidden" name="event_id" value="<?php echo htmlentities($event_id); ?>" />
+					<input type="hidden" name="course_id" value="<?php echo htmlentities($course_id); ?>" />
+					<input type="hidden" name="operation" value="change_sort_mode" />
+					<?php if($event_info["sort_mode"] == 0) { ?>
+						<input type="hidden" name="sort_mode" value="1" />
+						<input type="submit" value="Sort By Name" />
+					<?php } else { ?>
+						<input type="hidden" name="sort_mode" value="0" />
+						<input type="submit" value="Sort By LC" />
+					<?php } ?>
+
+				</form>
+				|
+				<form class="basic" method="POST">
+					<input type="hidden" name="lc_email" value="<?php echo htmlentities($lc_email); ?>" />
+					<input type="hidden" name="event_id" value="<?php echo htmlentities($event_id); ?>" />
+					<input type="hidden" name="course_id" value="<?php echo htmlentities($course_id); ?>" />
+					<input type="hidden" name="operation" value="change_nag_setting" />
+					<?php if($event_info["send_nags"] == 0) { ?>
+						<input type="hidden" name="send_nags" value="1" />
+						<input type="submit" value="Enable Auto-Nags" />
+					<?php } else { ?>
+						<input type="hidden" name="send_nags" value="0" />
+						<input type="submit" value="Disable Auto-Nags" />
+					<?php } ?>
+
 				</form>
 				<?php
 				}

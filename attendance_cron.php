@@ -21,7 +21,8 @@ function load_attendance_result($course_id, $event_name, $students_info) {
 
 	$statement = $pdo->prepare("
 		SELECT
-			id
+			id,
+			send_nags
 		FROM
 			attendance_events
 		WHERE
@@ -31,10 +32,12 @@ function load_attendance_result($course_id, $event_name, $students_info) {
 	");
 
 	$event_id = 0;
+	$send_nags = true;
 
 	$statement->execute(array($course_id, $event_name));
 	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
 		$event_id = $row["id"];
+		$send_nags = $row["send_nags"];
 	}
 
 	if($event_id == 0)
@@ -74,6 +77,7 @@ function load_attendance_result($course_id, $event_name, $students_info) {
 
 	return array(
 		"event_id" => $event_id,
+		"send_nags" => $send_nags,
 		"present" => $result,
 		"recorded" => $recorded,
 		"student_count" => $student_count,
@@ -151,6 +155,11 @@ function check_attendance_from_canvas($course_id, $notify_method) {
 				}
 
 				$res = load_attendance_result($course_id, $data["event"], $students);
+
+				if(!$res["send_nags"]) {
+					echo "no nags required for {$data["event"]}\n";
+					continue;
+				}
 
 				//if(gmddate(DATE_ISO8601
 				$when = strtotime($data["end_at"]);
