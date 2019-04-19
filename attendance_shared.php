@@ -156,6 +156,7 @@ function get_cohorts_info($course_id) {
 	return array(
 		"lcs" => $lcs,
 		"tas" => $tas,
+		"students" => $students,
 		"sections" => $sections
 	);
 }
