@@ -255,31 +255,6 @@ function get_event_info_by_name($course_id, $event_name) {
 	return get_event_info_by_name($course_id, $event_name);
 }
 
-function get_all_events($course_id) {
-	global $pdo;
-
-	$statement = $pdo->prepare("
-		SELECT
-			id, name, event_time, course_id
-		FROM
-			attendance_events
-		WHERE
-			course_id = ?
-		ORDER BY
-			display_order, event_time
-	");
-
-	$result = array();
-	$statement->execute(array($course_id));
-	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-		$result[] = $row;
-	}
-
-	return $result;
-}
-
-
-
 function create_event($course_id, $event_name) {
 	global $pdo;
 
@@ -294,80 +269,6 @@ function create_event($course_id, $event_name) {
 		$course_id,
 		$event_name
 	));
-}
-
-
-function load_student_status($event_id, $students_info) {
-	if(count($students_info) == 0)
-		return array();
-
-	global $pdo;
-
-	$students = array();
-	foreach($students_info as $student)
-		$students[] = $student["id"];
-
-	$statement = $pdo->prepare("
-		SELECT
-			person_id, present
-		FROM
-			attendance_people
-		WHERE
-			event_id = ?
-			AND
-			person_id IN  (".str_repeat('?,', count($students) - 1)."?)
-
-	");
-
-	$args = array($event_id);
-	$args = array_merge($args, $students);
-
-	$result = array();
-	$original_result = array();
-
-	foreach($students as $student) {
-		$result[$student] = "false";
-		$original_result[$student] = "false";
-	}
-
-	$statement->execute($args);
-	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-		// format it as a bool string here so we don't have to get ambiguity later with override strings
-		$result[$row["person_id"]] = $row["present"] ? "true" : "false";
-		$original_result[$row["person_id"]] = $row["present"] ? "true" : "false";
-	}
-
-	// and now we need to load overrides for withdrawn students, etc.
-
-	$statement = $pdo->prepare("
-		SELECT
-			person_id,
-			status
-		FROM
-			attendance_people_statuses
-		WHERE
-			course_id = (SELECT course_id FROM attendance_events WHERE id = ?)
-			AND
-			person_id IN  (".str_repeat('?,', count($students) - 1)."?)
-			AND
-			as_of < (SELECT event_time FROM attendance_events WHERE id = ?)
-		ORDER BY
-			as_of ASC -- the purpose here is to get the latest one last, so the loop below will defer to it. i really only want the max as_of that fits the othe requirements per person but idk how to express that in this version of mysql. meh.
-	");
-
-	$args[] = $event_id; // same args as before except for one more event id reference
-	$statement->execute($args);
-
-	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-		if(strlen($row["status"]) > 0) {
-			$result[$row["person_id"]] = $row["status"];
-		} else {
-			// if the override is blank, it means it was undone since now
-			$result[$row["person_id"]] = $original_result[$row["person_id"]];
-		}
-	}
-
-	return $result;
 }
 
 function bz_current_full_url() {

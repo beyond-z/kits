@@ -1044,3 +1044,27 @@ function bz_attendance($atts, $content = null) {
 }
 
 add_shortcode( 'take-attendance', 'bz_attendance' );
+
+
+/* allow linking to course-specific gradebooks */
+/* so content lib to something like this portal.bebraven.org/courses/45/gradebook */
+function bz_link_replace_to_canvas($content) {
+	global $braven_courses;
+
+	$course_url = "";
+	if(isset($_GET["bzcourse"])) {
+		foreach($braven_courses as $name => $id) {
+			if($name == $_GET["bzcourse"]) {
+				$course_url = "/courses/$id/gradebook";
+				break;
+			}
+		}
+	}
+
+	if($course_url != "")
+		$content = str_replace("/courses/1/gradebook", $course_url, $content);
+
+
+	return $content;
+}
+add_filter('the_content', 'bz_link_replace_to_canvas');
