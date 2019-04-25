@@ -120,3 +120,4 @@ if(php_sapi_name() == 'cli') {
 	echo json_encode($response);
 }
 
+echo "*****\nRunning at " . date('r') . "\n";
