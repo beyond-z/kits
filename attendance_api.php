@@ -18,12 +18,12 @@ function get_attendance_api_result($course_id, $users) {
 		$event["statuses"] = load_student_status($event["id"], $users);
 		foreach($event["statuses"] as $user_id => $user_status) {
 			if(!isset($response["statuses"][$user_id]))
-				$response["statuses"][$user_id] = array("events" => array(), "total" => 0, "events" => $events_in_the_past);
+				$response["statuses"][$user_id] = array("events" => array(), "total_present" => 0, "total_events" => $events_in_the_past);
 			$response["statuses"][$user_id]["events"][] = $user_status;
 			if($user_status == "true") {
 				// only if it is in the past do we want to set this count
 				if($event["event_time"] && strtotime($event["event_time"]) < time())
-					$response["statuses"][$user_id]["total"] += 1;
+					$response["statuses"][$user_id]["total_present"] += 1;
 			}
 		}
 	}
@@ -79,8 +79,8 @@ if(php_sapi_name() == 'cli') {
 		curl_setopt($ch, CURLOPT_POST, 1);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS,
-			urlencode("column_data[title]")."=Attendance" .
-			'&'.urlencode("column_data[read_only]")."=true" .
+			urlencode("column[title]")."=Attendance" .
+			'&'.urlencode("column[read_only]")."=true" .
 			'&access_token='.urlencode($WP_CONFIG["CANVAS_TOKEN"]));
 		$answer = curl_exec($ch);
 		curl_close($ch);
@@ -96,7 +96,7 @@ if(php_sapi_name() == 'cli') {
 		$result = get_attendance_api_result($course_id, $cohort_info["students"]);
 
 		foreach($result["statuses"] as $uid => $status) {
-			set_canvas_attendance_info($course_id, $column_number, $uid, $status["total"] . "/". $status["events"]);
+			set_canvas_attendance_info($course_id, $column_number, $uid, $status["total_present"] . "/". $status["total_events"]);
 		}
 	}
 } else {
