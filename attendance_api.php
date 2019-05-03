@@ -35,6 +35,8 @@ if(php_sapi_name() == 'cli') {
 	// if calling it from the command line, instead sync it with Canvas
 	// via the api bridges
 
+	echo "*****\nRunning at " . date('r') . "\n";
+
 	function set_canvas_attendance_info($course_id, $column_number, $uid, $text) {
 		global $WP_CONFIG;
 
@@ -119,5 +121,3 @@ if(php_sapi_name() == 'cli') {
 
 	echo json_encode($response);
 }
-
-echo "*****\nRunning at " . date('r') . "\n";
