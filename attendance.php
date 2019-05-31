@@ -622,19 +622,40 @@ requireLogin();
 		exit($string);
 	}
 
-	function checkbox_for($student, $event_id) {
+	function checkbox_for($student, $event_id, $abbreviate) {
 		global $student_status;
 		$sta = $student_status[$event_id][$student["id"]];
-		if($sta == "true" || $sta == "false" || $sta == "") {
+		if($sta == "true" || $sta == "false" || $sta == "null" || $sta == "") {
 		?>
+			<span class="boxes-container">
+			<label>
 			<input
 				onchange="recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 1 : 0);"
-				type="checkbox"
+				type="radio"
+				value="true"
+				name="<?php echo $event_id . '_' . $student["id"]; ?>"
 				data-event-id="<?php echo $event_id; ?>"
 				data-student-name="<?php echo htmlentities($student["name"]); ?>"
 				data-student-id="<?php echo htmlentities($student["id"]); ?>"
-				<?php if($sta == "true") echo "checked=\"checked\""; ?>
+				<?php if($sta === "true") echo "checked=\"checked\""; ?>
 			/>
+			P<?php if(!$abbreviate) echo "resent"; ?>
+			</label>
+
+			<label>
+			<input
+				onchange="recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 0 : 1);"
+				type="radio"
+				value="false"
+				name="<?php echo $event_id . '_' . $student["id"]; ?>"
+				data-event-id="<?php echo $event_id; ?>"
+				data-student-name="<?php echo htmlentities($student["name"]); ?>"
+				data-student-id="<?php echo htmlentities($student["id"]); ?>"
+				<?php if($sta === "false") echo "checked=\"checked\""; ?>
+			/>
+			A<?php if(!$abbreviate) echo "bsent"; ?>
+			</label>
+			</span>
 		<?php
 		} else {
 			echo $sta;
@@ -646,6 +667,24 @@ requireLogin();
 <head>
 <title>Attendance Tracker</title>
 <style>
+	.attendance-individual > span {
+		display: inline-block;
+		width: 10em;
+		overflow: hidden;
+		margin-right: 4px;
+		vertical-align: top;
+	}
+	@media(min-width: 25em) {
+		.attendance-individual > span {
+			text-align: right;
+		}
+	}
+	.attendance-individual input[type=radio] {
+		vertical-align: baseline;
+	}
+	.attendance-individual .boxes-container {
+		white-space: nowrap;
+	}
 	form.basic {
 		display: inline;
 	}
@@ -675,11 +714,7 @@ requireLogin();
 	}
 
 	li {
-		margin: 8px 0px;
-	}
-
-	label, input {
-		vertical-align: middle;
+		margin: 12px 0px;
 	}
 
 	a {
@@ -796,15 +831,22 @@ requireLogin();
 			if(p) {
 				var inputs = p.querySelectorAll("input");
 				for(var a = 0; a < inputs.length; a++) {
-					total++;
-					if(inputs[a].checked)
-						there++;
+					if(inputs[a].getAttribute("value") === "true") {
+						total++;
+						if(inputs[a].checked)
+							there++;
+					}
 				}
 				p.querySelector(".percent").textContent = Math.round(there * 100 / total);
 
 
 				var pe = document.getElementById("percent-" + ele.getAttribute("data-event-id"));
-				pe.setAttribute("data-there", (pe.getAttribute("data-there")|0) + (ele.checked ? 1 : -1));
+				var delta = 0;
+				if(ele.getAttribute("value") == "true")
+					delta = ele.checked ? 1 : -1;
+				if(ele.getAttribute("value") == "false")
+					delta = ele.checked ? -1 : 1;
+				pe.setAttribute("data-there", (pe.getAttribute("data-there")|0) + delta);
 				pe.textContent = Math.round(pe.getAttribute("data-there") * 100 / pe.getAttribute("data-total"));
 			}
 		};
@@ -931,7 +973,7 @@ requireLogin();
 						$last_lc = $student["lc_name"];
 					}
 
-					echo "<li><label>";
+					echo "<li class=\"attendance-individual\">";//<label>";
 				} else {
 					if($student["lc_name"] != $last_lc) {
 						echo "<tr><th style=\"text-align: left;\" colspan=\"".($columns)."\"><abbr title=\"".(htmlentities($student["lc_name"]))."\">".htmlentities($student["section_name"])."</abbr> ";
@@ -964,27 +1006,27 @@ requireLogin();
 					echo "</td>";
 				}
 
+				if($tag == "li")
+					echo "<span>" . htmlentities($student["name"]) . "</span>";
+
 				if($single_event)
-					checkbox_for($student, $event_id);
+					checkbox_for($student, $event_id, false);
 				else {
 					$sthere = 0;
 					$stotal = 0;
 					foreach($events as $event) {
 						$stotal += 1;
 						echo "<td>";
-						$sthere += checkbox_for($student, $event["id"]) ? 1 : 0;
+						$sthere += checkbox_for($student, $event["id"], true) ? 1 : 0;
 						echo "</td>";
 					}
 
 					echo "<td><span class=\"percent\">" . round($sthere * 100 / $stotal) . "</span>%</td>";
 				}
-
-				if($tag == "li")
-					echo htmlentities($student["name"]);
 			?>
 		<?php
 			if($tag == "li")
-				echo "</label></li>";
+				echo "</li>";//"</label></li>";
 			else
 				echo "</tr>";
 			}
@@ -998,7 +1040,7 @@ requireLogin();
 					$there = 0;
 					$total = 0;
 					foreach($student_status[$event["id"]] as $status) {
-						if($status === "true" || $status === "false" || $status === "") {
+						if($status === "true" || $status === "false" || $status === "null" || $status === "") {
 							$total += 1;
 							if($status === "true")
 								$there += 1;
