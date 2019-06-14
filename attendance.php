@@ -667,9 +667,11 @@ requireLogin();
 <head>
 <title>Attendance Tracker</title>
 <style>
+	.attendance-individual > span:first-child {
+		width: 10em;
+	}
 	.attendance-individual > span {
 		display: inline-block;
-		width: 10em;
 		overflow: hidden;
 		margin-right: 4px;
 		vertical-align: top;
