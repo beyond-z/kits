@@ -664,11 +664,13 @@ function bz_meta_boxes( $meta_boxes ) {
 				'name' => __( 'LCs: How to Prepare<ul><li>Please use bullet list.</li></ul>', 'bz' ),
 				'type' => 'wysiwyg',
 			),
+			/*
 			array(
 				'id'   => 'bz_kit_how_to_prep',
 				'name' => __( 'How to Prepare (please use bullet list)', 'bz' ),
 				'type' => 'wysiwyg',
 			),
+			*/
 			array(
 				'id'   => 'bz_kit_after',
 				'name' => __( 'After Learning Lab (please use bullets; begin with a term in bold, followed by &ldquo;&nbsp;&ndash;&nbsp;&rdquo;', 'bz' ),
