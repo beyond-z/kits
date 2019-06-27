@@ -233,12 +233,24 @@ get_header(); ?>
 	?>
 	
 	<?php
+	if (!empty($customfields['bz_kit_lc_how_to_prepare'])){ ?>
+		<div class="kit-component lc_how_to_prepare start-collapsed">
+			<h2><?php echo __('Leadership Coaches: How to Prepare', 'bz'); ?></h2>
+			<?php echo apply_filters('the_content',$customfields['bz_kit_lc_how_to_prepare'][0]);?>
+		</div> <?php
+	} 
+	?>
+
+	
+	<?php
+	/*
 	if (!empty($customfields['bz_kit_how_to_prep'])){ ?>
 		<div class="kit-component how-to-prep start-collapsed">
 			<h2><?php echo __('How to Prepare', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_how_to_prep'][0]);?>
 		</div> <?php
 	} 
+	*/
 	?>
 
 	<?php
