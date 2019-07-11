@@ -588,6 +588,7 @@ function bz_meta_boxes( $meta_boxes ) {
 				'name' => __( 'Who is facilitating?', 'bz' ),
 				'type' => 'radio',
 				'options' => $bz_facilitators,
+				'std' => 'coach',
 			),
 		),
 	);
