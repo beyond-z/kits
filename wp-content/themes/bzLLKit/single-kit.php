@@ -306,6 +306,10 @@ get_header(); ?>
 								<span class="facilitator facilitator-<?php echo $activity_facilitator;?>">
 									<?php echo __('Facilitated by ', 'bz') . $bz_facilitators[$activity_facilitator]; // get user-facing title by key. $bz_facilitators is defined in functions.php ?>
 								</span>
+							<?php } else { ?>
+								<span class="facilitator facilitator-coach">
+									<?php echo 'Facilitated by Coach'; ?>
+								</span>
 							<?php } // end if facilitator ?>
 						</div>
 						<span class="activity-title"><?php echo $activity_post->post_title;?></span>
