@@ -1102,7 +1102,11 @@ requireLogin();
 
 							<label class="absent">
 							<input
-								onchange="recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 0 : 1);"
+								onchange="
+									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 0 : 1);
+									if(this.checked)
+										this.parentNode.parentNode.parentNode.parentNode.querySelector('input[value=&quot;late&quot;]').checked = false;
+								"
 								type="radio"
 								value="false"
 								name="<?php echo $event_id . '_' . $student["id"]; ?>"
