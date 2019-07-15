@@ -15,7 +15,7 @@ function get_attendance_api_result($course_id, $users) {
 	}
 
 	foreach($response["events"] as &$event) {
-		$event["statuses"] = load_student_status($event["id"], $users);
+		$event["statuses"] = load_student_status($event["id"], $users)["result"];
 		foreach($event["statuses"] as $user_id => $user_status) {
 			if(!isset($response["statuses"][$user_id]))
 				$response["statuses"][$user_id] = array("events" => array(), "total_present" => 0, "total_events" => $events_in_the_past);
