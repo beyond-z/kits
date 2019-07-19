@@ -754,21 +754,37 @@ requireLogin();
 		display: inline-block;
 		padding: 0.5em 0.75em;
 		background-color: white;
+		border-color: #cecdcd;
+    border-style: solid;
 	}
 
 	.boxes-container .present span {
-		border-radius: 0.5em 0px 0px 0.5em;
+	    border-width: 1px 1px 1px 1px;
+	    border-radius: .5em 0 0 .5em;
 	}
 	.boxes-container .absent span {
-		border-radius: 0px 0.5em 0.5em 0px;
+	    border-width: 1px 1px 1px 1px;
+	    border-radius: 0 .5em .5em 0;
 	}
 
 	.boxes-container .present input:checked + span {
-		background-color: #44ff44;
+	    background-color: #43cc6e;
+	    border-color: #2cb155;
 	}
 
 	.boxes-container .absent input:checked + span {
-		background-color: #ff8888;
+	    background-color: #fb6a6a;
+	    border-color:#e04646;
+	}
+
+	.late{
+	    display: inline-block;
+	    padding: 0.5em 0.75em;
+	    background-color: transparent;
+	    border-color: transparent;
+	    border-radius: .5em;
+	    border-style: solid;
+	    border-width: 1px;
 	}
 
 	.late span {
@@ -783,6 +799,7 @@ requireLogin();
 	input[name=reason] {
 		box-sizing: border-box;
 		width: 100%;
+		font-size:100%;
 	}
 
 	input[name=reason]:not(:focus) {
@@ -908,18 +925,18 @@ requireLogin();
 <style>
 	.saving {
 		transition: all ease-out 1s;
-		background-color: #666;
+		background-color: #43cc6e;
 	}
 
 	.saved {
 
 		transition: all ease-out 1s;
-		background-color: #0f0;
+		background-color: transparent;
 	}
 
 	.error-saving {
 		transition: all ease-out 1s;
-		background-color: #f00;
+		background-color: #fb6a6a;
 	}
 
 	table {
@@ -941,10 +958,16 @@ requireLogin();
 		text-align: right;
 	}
 
+	.main-attendance-view {
+	    font-weight: normal;
+	    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+	}
+
 	.main-attendance-view .when {
 		display: block;
-		font-weight: 300;
-		text-transform: uppercase;
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: 80%;
 	}
 
 	.main-attendance-view td,
@@ -956,6 +979,39 @@ requireLogin();
 
 	.main-attendance-view tbody tr:nth-child(2n + 1) {
 		background-color: #eee;
+	}
+
+	#save-button-holder input{
+	    background: #eb3b45;
+	    -webkit-border-radius: 5px;
+	    -moz-border-radius: 5px;
+	    border-radius: 5px;
+	    color: #fff !important;
+	    cursor: pointer;
+	    display: inline-block;
+	    text-align: center;
+	    vertical-align: middle;
+	    font-family: "TradeGothicNo.20-CondBold", "Oswald", "Arial Narrow", sans-serif;
+	    text-transform: uppercase;
+	    font-size: 21px;
+	    font-weight: 400;
+	    letter-spacing: 1px;
+	    line-height: 1.333em;
+	    margin: 30px auto 0;
+	    display: block;
+	    padding-bottom: 10px;
+	    padding-left: 50px;
+	    padding-right: 50px;
+	    padding-top: 10px;
+	    text-transform: uppercase;
+	    text-shadow: none;
+	    transition: all 0.5s ease 0s;
+	    border-color:white;
+	}
+
+	#save-button-holder input:hover, #save-button-holder input:hover, #save-button-holder input:hover {
+	    background: #000000;
+	    color: #fff !important;
 	}
 </style>
 </head>
@@ -1141,7 +1197,7 @@ requireLogin();
 								value="<?php echo htmlentities($reason) ?>"
 								onchange="
 									recordReason(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.value);
-								
+
 								" />
 								<datalist id="reason_list">
 									<option value="Sick / Dr. Appt" />
