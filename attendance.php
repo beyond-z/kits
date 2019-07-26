@@ -1279,7 +1279,7 @@ requireLogin();
 							</span>
 							</td>
 							<td>
-								<label class="late"><input type="checkbox" onchange="
+								<label class="late <?php if($sta === "late") echo 'checked'; ?>"><input type="checkbox" onchange="
 									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 2 : 1);
 									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;false&quot;]').checked = false;
 									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;true&quot;]').checked = true;
