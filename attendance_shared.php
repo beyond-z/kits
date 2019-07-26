@@ -233,6 +233,7 @@ function load_student_status($event_id, $students_info) {
 	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
 		// format it as a bool string here so we don't have to get ambiguity later with override strings
 		$value = "null";
+		if($row["present"] !== null)
 		switch($row["present"]) {
 			case 0:
 				$value = "false";
