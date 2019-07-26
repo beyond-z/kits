@@ -341,7 +341,7 @@ function sso() {
 		$user = $xml->getElementsByTagNameNS("*", "user")->item(0)->textContent;
 
 		// login successful
-		$_SESSION["user"] = $user;
+		$_SESSION["user"] = strtolower($user);
 			//echo "User " . htmlentities($user) . " is not authorized. Try logging out of SSO first.";
 
 		header("Location: " . $coming_from);
@@ -579,6 +579,8 @@ requireLogin();
 	function get_student_list($lc, $sort_method = 1) {
 		global $cohort_info;
 
+		$lc = strtolower($lc);
+
 		$already_there = array();
 
 		$list = array();
@@ -587,8 +589,12 @@ requireLogin();
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
 				$enrollment["lc_name"] = $section["lc_name"];
-				$enrollment["lc_email"] = $section["lc_email"];
+				$enrollment["lc_email"] = strtolower($section["lc_email"]);
 				$enrollment["section_name"] = $section["name"];
+				// need to check non-enrollments for schwab's duo-LC setup
+				if($lc != null && $enrollment["lc_email"] == $lc) {
+					$keep_this_one = true;
+				}
 				if($enrollment["type"] == "TaEnrollment") {
 					if($lc != null && ($enrollment["lc_email"] == $lc || $enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
 						$keep_this_one = true;
