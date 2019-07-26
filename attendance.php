@@ -33,6 +33,8 @@ SET NAMES utf8mb4;
 		present INTEGER NULL, -- null means unknown, 0 means no, 1 means there, 2 means late
 		dummy_id INTEGER NOT NULL AUTO_INCREMENT,
 		reason TEXT NULL,
+		updated_at TIMESTAMP NOT NULL DEFAULT now(),
+		updated_by TEXT,
 		PRIMARY_KEY (dummy_id),
 		UNIQUE KEY unique_index (event_id, person_id),
 		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE
@@ -50,6 +52,11 @@ SET NAMES utf8mb4;
 		PRIMARY KEY (dummy_id),
 		UNIQUE KEY unique_index (event_id, lc_email),
 		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE
+	) DEFAULT CHARACTER SET=utf8mb4;
+
+	CREATE TABLE attendance_courses (
+		id INTEGER PRIMARY KEY, -- should match the canvas id
+		late_threshold VARCHAR(40) DEFAULT '5 mins'
 	) DEFAULT CHARACTER SET=utf8mb4;
 
 	CREATE TABLE attendance_people_statuses (
@@ -183,38 +190,49 @@ function set_reason($event_id, $person_id, $reason) {
 
 	$statement = $pdo->prepare("
 		INSERT INTO attendance_people
-			(event_id, person_id, reason)
+			(event_id, person_id, reason, updated_at, updated_by)
 		VALUES
-			(?, ?, ?)
+			(?, ?, ?, now(), ?)
 		ON DUPLICATE KEY UPDATE
-			reason = ?
+			reason = ?,
+			updated_at = now(),
+			updated_by = ?
 	");
 
 	$statement->execute(array(
 		$event_id,
 		$person_id,
 		$reason,
-		$reason
+		$_SESSION["user"],
+		$reason,
+		$_SESSION["user"]
 	));
 }
 
 function set_attendance($event_id, $person_id, $present) {
 	global $pdo;
 
+	if($present == '')
+		$present = null;
+
 	$statement = $pdo->prepare("
 		INSERT INTO attendance_people
-			(event_id, person_id, present)
+			(event_id, person_id, present, updated_at, updated_by)
 		VALUES
-			(?, ?, ?)
+			(?, ?, ?, now(), ?)
 		ON DUPLICATE KEY UPDATE
-			present = ?
+			present = ?,
+			updated_at = now(),
+			updated_by = ?
 	");
 
 	$statement->execute(array(
 		$event_id,
 		$person_id,
 		$present,
-		$present
+		$_SESSION["user"],
+		$present,
+		$_SESSION["user"]
 	));
 
 	// We need to email staff if stuff changes after about thrusday at noon the week of the event.
@@ -323,7 +341,7 @@ function sso() {
 		$user = $xml->getElementsByTagNameNS("*", "user")->item(0)->textContent;
 
 		// login successful
-		$_SESSION["user"] = $user;
+		$_SESSION["user"] = strtolower($user);
 			//echo "User " . htmlentities($user) . " is not authorized. Try logging out of SSO first.";
 
 		header("Location: " . $coming_from);
@@ -421,6 +439,8 @@ requireLogin();
 		return $arr[$cnt - 1];
 	}
 
+	$is_staff = strpos($_SESSION["user"], "@bebraven.org") !== FALSE || strpos($_SESSION["user"], "@beyondz.org") !== FALSE;
+
 	if(isset($_POST["operation"])) {
 		switch($_POST["operation"]) {
 			case "reason":
@@ -447,14 +467,37 @@ requireLogin();
 				set_event_sort_setting($_POST["event_id"], $_POST["sort_mode"]);
 				header("Location: attendance.php?event_id=".urlencode($_POST["event_id"])."&lc=".urlencode($_POST["lc_email"])."&course_id=".urlencode($_POST["course_id"]));
 			break;
+			case "masquerade":
+				$_SESSION["masquerading_user"] = $_SESSION["user"];
+				$_SESSION["user"] = $_POST["as"];
+
+				header("Location: attendance.php");
+				exit;
+			break;
+			case "stop_masquerade":
+				$_SESSION["user"] = $_SESSION["masquerading_user"];
+				unset($_SESSION["masquerading_user"]);
+
+				header("Location: {$_SERVER["HTTP_REFERER"]}");
+				exit;
+			break;
 			default:
 				// this space intentionally left blank
 		}
 		exit;
 	}
 
+	if((isset($_SESSION["masquerading_user"]) || $is_staff) && isset($_GET["operation"]) && $_GET["operation"] == "masquerade") {
+		?>
+		<form method="POST">
+			<input type="hidden" name="operation" value="masquerade" />
 
-	$is_staff = strpos($_SESSION["user"], "@bebraven.org") !== FALSE || strpos($_SESSION["user"], "@beyondz.org") !== FALSE;
+			<input type="email" name="as" placeholder="user email" />
+
+			<button type="submit">Masquerade</button>
+		<?php
+		exit;
+	}
 
 	// this is set temporarily to figure out the course, then later lc_email is set again
 	$lc_email = ($is_staff && isset($_REQUEST["lc"]) && $_REQUEST["lc"] != "") ? $_REQUEST["lc"] : $_SESSION["user"];
@@ -487,9 +530,30 @@ requireLogin();
 		exit;
 	}
 
+	function get_course_late_definition($course_id) {
+		global $pdo;
+
+		$statement = $pdo->prepare("
+			SELECT
+				late_threshold
+			FROM
+				attendance_courses
+			WHERE
+				id = ?
+		");
+
+		$statement->execute(array($course_id));
+		while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+			return $row["late_threshold"];
+		}
+
+		return "5 min";
+	}
+
 	$event_id = 0;
 	$event_name = "";
 	$event_info = null;
+	$late_definition = get_course_late_definition($course_id);
 	if(isset($_GET["event_id"]) && $_GET["event_id"] != "") {
 		$event_id = $_GET["event_id"];
 		$event_info = get_event_info($event_id);
@@ -515,6 +579,8 @@ requireLogin();
 	function get_student_list($lc, $sort_method = 1) {
 		global $cohort_info;
 
+		$lc = strtolower($lc);
+
 		$already_there = array();
 
 		$list = array();
@@ -523,8 +589,12 @@ requireLogin();
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
 				$enrollment["lc_name"] = $section["lc_name"];
-				$enrollment["lc_email"] = $section["lc_email"];
+				$enrollment["lc_email"] = strtolower($section["lc_email"]);
 				$enrollment["section_name"] = $section["name"];
+				// need to check non-enrollments for schwab's duo-LC setup
+				if($lc != null && $enrollment["lc_email"] == $lc) {
+					$keep_this_one = true;
+				}
 				if($enrollment["type"] == "TaEnrollment") {
 					if($lc != null && ($enrollment["lc_email"] == $lc || $enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
 						$keep_this_one = true;
@@ -658,6 +728,22 @@ requireLogin();
 <head>
 <title>Attendance Tracker</title>
 <style>
+	.late.checked {
+		background-color: white;
+		border-color: #cecdcd;
+	}
+	.undo {
+		border: none;
+		background: transparent;
+		color: #999;
+		text-transform: uppercase;
+		text-decoration: underline;
+		cursor: pointer;
+		visibility: hidden;
+	}
+	.boxes-container:hover .undo.possible {
+		visibility: visible;
+	}
 	.attendance-individual > span:first-child {
 		width: 10em;
 	}
@@ -1111,7 +1197,7 @@ requireLogin();
 							<span class="what">Take Attendance</span>
 						</th>
 						<th>
-							<span class="when">Over 5 min late?</span>
+							<span class="when">Over <?php echo htmlentities($late_definition); ?> late?</span>
 							<span class="what">Track Punctuality</span>
 						</th>
 						<th>
@@ -1137,14 +1223,17 @@ requireLogin();
 						global $student_status;
 						global $student_reasons;
 						$sta = $student_status[$event_id][$student["id"]];
-						$reason = $student_reasons[$event_id][$student["id"]];
+						$reason = isset($student_reasons[$event_id][$student["id"]]) ? $student_reasons[$event_id][$student["id"]] : '';
 						if(status_is_changeable_by_user($sta)) {
 						?>
 							<td>
 							<span class="boxes-container">
 							<label class="present">
 							<input
-								onchange="recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 1 : 0);"
+								onchange="
+									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 1 : 0);
+									this.parentNode.parentNode.parentNode.querySelector('.undo').classList.add('possible');
+								"
 								type="radio"
 								value="true"
 								name="<?php echo $event_id . '_' . $student["id"]; ?>"
@@ -1162,6 +1251,7 @@ requireLogin();
 									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 0 : 1);
 									if(this.checked)
 										this.parentNode.parentNode.parentNode.parentNode.querySelector('input[value=&quot;late&quot;]').checked = false;
+									this.parentNode.parentNode.parentNode.querySelector('.undo').classList.add('possible');
 								"
 								type="radio"
 								value="false"
@@ -1173,13 +1263,27 @@ requireLogin();
 							/>
 								<span>Absent</span>
 							</label>
+							<button class="undo <?php if($sta != "null") echo "possible";?>" type="button"
+								data-event-id="<?php echo $event_id; ?>"
+								data-student-name="<?php echo htmlentities($student["name"]); ?>"
+								data-student-id="<?php echo htmlentities($student["id"]); ?>"
+								onclick="
+									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), '');
+									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;late&quot;]').checked = false;
+									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;true&quot;]').checked = false;
+									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;false&quot;]').checked = false;
+
+									this.classList.remove('possible');
+								"
+							>Undo</button>
 							</span>
 							</td>
 							<td>
-								<label class="late"><input type="checkbox" onchange="
+								<label class="late <?php if($sta === "late") echo 'checked'; ?>"><input type="checkbox" onchange="
 									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 2 : 1);
 									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;false&quot;]').checked = false;
 									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;true&quot;]').checked = true;
+									if(this.checked) this.parentNode.classList.add('checked'); else this.parentNode.classList.remove('checked');
 								"
 								name="<?php echo $event_id . '_' . $student["id"] . '_late'; ?>"
 								data-event-id="<?php echo $event_id; ?>"
@@ -1195,20 +1299,13 @@ requireLogin();
 								data-student-name="<?php echo htmlentities($student["name"]); ?>"
 								data-student-id="<?php echo htmlentities($student["id"]); ?>"
 								value="<?php echo htmlentities($reason) ?>"
+								onfocus="this.oldValue = this.value; this.value = '';"
+								onblur="if(this.oldValue) this.value = this.oldValue;"
+								oninput="this.oldValue = null; autocompleteHacks(this);"
+								placeholder="Reason for expected absence"
 								onchange="
 									recordReason(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.value);
-
 								" />
-								<datalist id="reason_list">
-									<option value="Sick / Dr. Appt" />
-									<option value="Work" />
-									<option value="School" />
-									<option value="Caregiving" />
-									<option value="Bereavement / Family Emergency" />
-									<option value="Transportation" />
-									<option value="Professional Development" />
-									<option value="Vacation" />
-								</datalist>
 							</td>
 						<?php
 						} else {
@@ -1221,7 +1318,7 @@ requireLogin();
 					echo "</tbody>";
 					echo "</table>";
 
-					echo '<div id="save-button-holder"><input type="button" onclick="alert(\"Your changes are saved, thank you.\"); value="Save" /></div>';
+					echo '<div id="save-button-holder"><input type="button" onclick="alert(&quot;Your changes are saved, thank you.&quot;);" value="Save" /></div>';
 					echo '<br><br>';
 				}
 
@@ -1283,7 +1380,7 @@ requireLogin();
 			}
 
 			if($is_staff) { ?>
-				<a href="attendance.php?course_id=<?php echo (int) $course_id;?>&download=csv">Download CSV</a>
+				<a href="attendance.php?course_id=<?php echo (int) $course_id;?>&amp;download=csv">Download CSV</a>
 				<?php if($single_event) { ?>
 				|
 				<form class="basic" method="POST">
@@ -1339,6 +1436,37 @@ requireLogin();
 				<?php
 				}
 			}
+			?>
+
+			<datalist id="reason_list">
+				<option value="Sick / Dr. Appt" />
+				<option value="Work" />
+				<option value="School" />
+				<option value="Caregiving" />
+				<option value="Bereavement / Family Emergency" />
+				<option value="Transportation" />
+				<option value="Professional Development" />
+				<option value="Vacation" />
+			</datalist>
+			<script>
+				function autocompleteHacks(ele) {
+					if(ele.length < 4)
+						return;
+					var list = document.querySelectorAll("#reason_list option");
+					for(var i = 0; i < list.length; i++) {
+						if(list[i].getAttribute("value") == ele.value) {
+							// it was selected
+							ele.blur();
+							return;
+						}
+					}
+				}
+
+				function showAutocompleteHack(ele) {
+					ele.setAttribute("placeholder", "Click for options...");
+				}
+			</script>
+			<?php
 		}
 		?>
 
@@ -1360,6 +1488,16 @@ requireLogin();
 			<button type="button" onclick="document.getElementById('withdrawn_dialog').style.display = '';">Cancel</button>
 		</form>
 	</div>
-
+</div>
+<?php
+	if(isset($_SESSION["masquerading_user"])) {
+?>
+	<form method="POST">
+		<input type="hidden" name="operation" value="stop_masquerade" />
+		<button type="submit">Stop masquerading as <?php echo htmlentities($_SESSION["masquerading_user"]); ?></button>
+	</form>
+<?php
+	}
+?>
 </body>
 </html>
