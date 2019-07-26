@@ -728,6 +728,10 @@ requireLogin();
 <head>
 <title>Attendance Tracker</title>
 <style>
+	.late.checked {
+		background-color: white;
+		border-color: #cecdcd;
+	}
 	.undo {
 		border: none;
 		background: transparent;
@@ -1279,6 +1283,7 @@ requireLogin();
 									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 2 : 1);
 									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;false&quot;]').checked = false;
 									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;true&quot;]').checked = true;
+									if(this.checked) this.parentNode.classList.add('checked'); else this.parentNode.classList.remove('checked');
 								"
 								name="<?php echo $event_id . '_' . $student["id"] . '_late'; ?>"
 								data-event-id="<?php echo $event_id; ?>"
