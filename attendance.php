@@ -892,6 +892,7 @@ requireLogin();
 		background: transparent;
 		background-repeat: no-repeat;
 		background-position: right center;
+		padding-right: 24px;
 		background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHg9IjBweCIgeT0iMHB4Igp3aWR0aD0iMjQiIGhlaWdodD0iMjQiCnZpZXdCb3g9IjAgMCAyNCAyNCIKc3R5bGU9IiBmaWxsOiMwMDAwMDA7Ij4gICAgPHBhdGggZD0iTSA3LjQyOTY4NzUgOS41IEwgNS45Mjk2ODc1IDExIEwgMTIgMTcuMDcwMzEyIEwgMTguMDcwMzEyIDExIEwgMTYuNTcwMzEyIDkuNSBMIDEyIDE0LjA3MDMxMiBMIDcuNDI5Njg3NSA5LjUgeiI+PC9wYXRoPjwvc3ZnPg==');
 		border: none;
 	}
@@ -1300,7 +1301,8 @@ requireLogin();
 								data-student-id="<?php echo htmlentities($student["id"]); ?>"
 								value="<?php echo htmlentities($reason) ?>"
 								onfocus="this.oldValue = this.value; this.value = '';"
-								onblur="if(this.oldValue) this.value = this.oldValue;"
+								onblur="if(this.oldValue) this.value = this.oldValue; else if(this.value == '') this.onchange();"
+								onkeydown="this.oldValue = null;"
 								oninput="this.oldValue = null; autocompleteHacks(this);"
 								placeholder="Reason for expected absence"
 								onchange="
