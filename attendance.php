@@ -733,7 +733,7 @@ requireLogin();
 	}
 	.main-attendance-view tr th {
     padding-top: 15px;
-	}
+  }
 	.late.checked {
 		background-color: white;
 		border-color: #cecdcd;
