@@ -842,37 +842,37 @@ requireLogin();
 		padding: 0.5em 0.75em;
 		background-color: white;
 		border-color: #cecdcd;
-    border-style: solid;
+		border-style: solid;
 	}
 
 	.boxes-container .present span {
-	    border-width: 1px 1px 1px 1px;
-	    border-radius: .5em 0 0 .5em;
+		border-width: 1px 1px 1px 1px;
+		border-radius: .5em 0 0 .5em;
 	}
 	.boxes-container .absent span {
-	    border-width: 1px 1px 1px 1px;
-	    border-radius: 0 .5em .5em 0;
+		border-width: 1px 1px 1px 1px;
+		border-radius: 0 .5em .5em 0;
 	}
 
 	.boxes-container .present input:checked + span {
-	    background-color: #43cc6e;
-	    border-color: #2cb155;
+		background-color: #43cc6e;
+		border-color: #2cb155;
 	}
 
 	.boxes-container .absent input:checked + span {
-	    background-color: #fb6a6a;
-	    border-color:#e04646;
+		background-color: #fb6a6a;
+		border-color:#e04646;
 	}
 
 	.late{
-	    display: inline-block;
-	    padding: 0.5em 0.75em;
-	    background-color: transparent;
-	    border-color: transparent;
-	    border-radius: .5em;
-	    border-style: solid;
-	    border-width: 1px;
-			font-size: 90%;
+		display: inline-block;
+		padding: 0.5em 0.75em;
+		background-color: transparent;
+		border-color: transparent;
+		border-radius: .5em;
+		border-style: solid;
+		border-width: 1px;
+		font-size: 90%;
 	}
 
 	.late span {
