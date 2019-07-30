@@ -728,6 +728,9 @@ requireLogin();
 <head>
 <title>Attendance Tracker</title>
 <style>
+	article#take-attendance .duration {
+		display:none;
+	}
 	.late.checked {
 		background-color: white;
 		border-color: #cecdcd;
@@ -830,6 +833,7 @@ requireLogin();
 		white-space: nowrap;
 		display: block; /* fallback in case flex isn't supported */
 		display: flex;
+		font-size: 90%;
 	}
 
 	.boxes-container input {
@@ -871,6 +875,7 @@ requireLogin();
 	    border-radius: .5em;
 	    border-style: solid;
 	    border-width: 1px;
+			font-size: 90%;
 	}
 
 	.late span {
@@ -885,7 +890,7 @@ requireLogin();
 	input[name=reason] {
 		box-sizing: border-box;
 		width: 100%;
-		font-size:100%;
+		font-size:90%;
 	}
 
 	input[name=reason]:not(:focus) {
@@ -1055,6 +1060,10 @@ requireLogin();
     font-weight: normal;
     text-transform: uppercase;
     font-size: 80%;
+	}
+
+	.main-attendance-view .what, .main-attendance-view .when {
+		white-space: nowrap;
 	}
 
 	.main-attendance-view td,
@@ -1304,7 +1313,7 @@ requireLogin();
 								onblur="if(this.oldValue) this.value = this.oldValue; else if(this.value == '') this.onchange();"
 								onkeydown="this.oldValue = null;"
 								oninput="this.oldValue = null; autocompleteHacks(this);"
-								placeholder="Reason for expected absence"
+								placeholder="Reason for absence"
 								onchange="
 									recordReason(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.value);
 								" />
