@@ -728,9 +728,6 @@ requireLogin();
 <head>
 <title>Attendance Tracker</title>
 <style>
-	article#take-attendance .duration {
-		display:none;
-	}
 	.late.checked {
 		background-color: white;
 		border-color: #cecdcd;

@@ -785,3 +785,8 @@ a:hover {
 		display:none;
 	}
 }
+
+
+article#take-attendance .duration {
+	display:none;
+}
