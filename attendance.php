@@ -896,7 +896,7 @@ requireLogin();
 		font-size:90%;
 	}
 
-	tr.reason-description, 	tr.reason-description td {
+	tr.reason-description, 	tr.reason-description td, tr.reason-description:last-child td, .main-attendance-view tr.reason-description td:nth-child(4) {
 		background-color:white;
 		color: #999;
 		font-style: italic;
