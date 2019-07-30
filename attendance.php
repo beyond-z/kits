@@ -729,7 +729,7 @@ requireLogin();
 <title>Attendance Tracker</title>
 <style>
 	.main-attendance-view tr th:nth-child(4), .main-attendance-view tr td:nth-child(4) {
-		background: #e2e2e2;
+		background-color: rgba(226,226,226, 0.4);
 	}
 	.main-attendance-view tr th {
 		padding-top: 15px;
@@ -1341,7 +1341,7 @@ requireLogin();
 						}
 						echo "</tr>";
 					}
-					echo "<tr class='reason-description'><td></td></td><td></td><td><small>Only use this field if a student reached out to you before missing or being late to a class.</small></td></tr>";
+					echo "<tr class='reason-description'><td></td><td></td><td></td><td><small>Only use this field if a student reached out to you before missing or being late to a class.</small></td></tr>";
 					echo "</tbody>";
 					echo "</table>";
 
