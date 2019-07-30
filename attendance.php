@@ -729,7 +729,7 @@ requireLogin();
 <title>Attendance Tracker</title>
 <style>
 	.main-attendance-view tr th:nth-child(4), .main-attendance-view tr td:nth-child(4) {
-		background-color: rgba(226,226,226, 0.4);
+		background-color: rgba(226,226,226, 0.3);
 	}
 	.main-attendance-view tr th {
 		padding-top: 15px;
@@ -896,14 +896,10 @@ requireLogin();
 		font-size:90%;
 	}
 
-	tr.reason-description {
+	tr.reason-description, 	tr.reason-description td {
 		background-color:white;
 		color: #999;
 		font-style: italic;
-	}
-
-	tr.reason-description td:nth-child(4) {
-		background-color:white;
 	}
 
 	input[name=reason]:not(:focus) {
