@@ -729,11 +729,11 @@ requireLogin();
 <title>Attendance Tracker</title>
 <style>
 	.main-attendance-view tr th:nth-child(4), .main-attendance-view tr td:nth-child(4) {
-    background: #e2e2e259;
+		background: #e2e2e2;
 	}
 	.main-attendance-view tr th {
-    padding-top: 15px;
-  }
+		padding-top: 15px;
+	}
 	.late.checked {
 		background-color: white;
 		border-color: #cecdcd;
@@ -899,11 +899,11 @@ requireLogin();
 	tr.reason-description {
 		background-color:white;
 		color: #999;
-    font-style: italic;
+		font-style: italic;
 	}
 
 	tr.reason-description td:nth-child(4) {
-    background-color:white;
+		background-color:white;
 	}
 
 	input[name=reason]:not(:focus) {
@@ -1064,15 +1064,15 @@ requireLogin();
 	}
 
 	.main-attendance-view {
-	    font-weight: normal;
-	    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+		font-weight: normal;
+		font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 	}
 
 	.main-attendance-view .when {
 		display: block;
-    font-weight: normal;
-    text-transform: uppercase;
-    font-size: 80%;
+		font-weight: normal;
+		text-transform: uppercase;
+		font-size: 80%;
 	}
 
 	.main-attendance-view .what, .main-attendance-view .when {
@@ -1091,36 +1091,36 @@ requireLogin();
 	}
 
 	#save-button-holder input{
-	    background: #eb3b45;
-	    -webkit-border-radius: 5px;
-	    -moz-border-radius: 5px;
-	    border-radius: 5px;
-	    color: #fff !important;
-	    cursor: pointer;
-	    display: inline-block;
-	    text-align: center;
-	    vertical-align: middle;
-	    font-family: "TradeGothicNo.20-CondBold", "Oswald", "Arial Narrow", sans-serif;
-	    text-transform: uppercase;
-	    font-size: 21px;
-	    font-weight: 400;
-	    letter-spacing: 1px;
-	    line-height: 1.333em;
-	    margin: 30px auto 0;
-	    display: block;
-	    padding-bottom: 10px;
-	    padding-left: 50px;
-	    padding-right: 50px;
-	    padding-top: 10px;
-	    text-transform: uppercase;
-	    text-shadow: none;
-	    transition: all 0.5s ease 0s;
-	    border-color:white;
+		background: #eb3b45;
+		-webkit-border-radius: 5px;
+		-moz-border-radius: 5px;
+		border-radius: 5px;
+		color: #fff !important;
+		cursor: pointer;
+		display: inline-block;
+		text-align: center;
+		vertical-align: middle;
+		font-family: "TradeGothicNo.20-CondBold", "Oswald", "Arial Narrow", sans-serif;
+		text-transform: uppercase;
+		font-size: 21px;
+		font-weight: 400;
+		letter-spacing: 1px;
+		line-height: 1.333em;
+		margin: 30px auto 0;
+		display: block;
+		padding-bottom: 10px;
+		padding-left: 50px;
+		padding-right: 50px;
+		padding-top: 10px;
+		text-transform: uppercase;
+		text-shadow: none;
+		: all 0.5s ease 0s;
+		border-color:white;
 	}
 
 	#save-button-holder input:hover, #save-button-holder input:hover, #save-button-holder input:hover {
-	    background: #000000;
-	    color: #fff !important;
+		background: #000000;
+		color: #fff !important;
 	}
 </style>
 </head>
@@ -1272,8 +1272,10 @@ requireLogin();
 							<input
 								onchange="
 									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 0 : 1);
-									if(this.checked)
+									if(this.checked) {
 										this.parentNode.parentNode.parentNode.parentNode.querySelector('input[value=&quot;late&quot;]').checked = false;
+										this.parentNode.parentNode.parentNode.parentNode.querySelector('.late').classList.remove('checked');
+									}
 									this.parentNode.parentNode.parentNode.querySelector('.undo').classList.add('possible');
 								"
 								type="radio"
