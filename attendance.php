@@ -728,8 +728,11 @@ requireLogin();
 <head>
 <title>Attendance Tracker</title>
 <style>
-	article#take-attendance .duration {
-		display:none;
+	.main-attendance-view tr th:nth-child(4), .main-attendance-view tr td:nth-child(4) {
+    background: #e2e2e259;
+	}
+	.main-attendance-view tr th {
+    padding-top: 15px;
 	}
 	.late.checked {
 		background-color: white;
@@ -891,6 +894,16 @@ requireLogin();
 		box-sizing: border-box;
 		width: 100%;
 		font-size:90%;
+	}
+
+	tr.reason-description {
+		background-color:white;
+		color: #999;
+    font-style: italic;
+	}
+
+	tr.reason-description td:nth-child(4) {
+    background-color:white;
 	}
 
 	input[name=reason]:not(:focus) {
@@ -1326,6 +1339,7 @@ requireLogin();
 						}
 						echo "</tr>";
 					}
+					echo "<tr class='reason-description'><td></td></td><td></td><td><small>Only use this field if a student reached out to you before missing or being late to a class.</small></td></tr>"
 					echo "</tbody>";
 					echo "</table>";
 
