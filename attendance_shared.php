@@ -119,7 +119,7 @@ function populate_times_from_canvas($course_id) {
 }
 
 function isTa($user_email, $cohort_info) {
-	return in_array($user_email, $cohort_info["tas"]);
+	return in_array(strtolower($user_email), $cohort_info["tas"]);
 }
 
 function get_cohorts_info($course_id) {
@@ -153,7 +153,7 @@ function get_cohorts_info($course_id) {
 				$students[] = $enrollment;
 		}
 		if(isset($section["ta_email"]))
-			$tas[] = $section["ta_email"];
+			$tas[] = strtolower($section["ta_email"]);
 	}
 
 	return $_SESSION["cohort_course_info_$course_id"] = array(
@@ -233,6 +233,7 @@ function load_student_status($event_id, $students_info) {
 	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
 		// format it as a bool string here so we don't have to get ambiguity later with override strings
 		$value = "null";
+		if($row["present"] !== null)
 		switch($row["present"]) {
 			case 0:
 				$value = "false";

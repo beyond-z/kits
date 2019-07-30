@@ -1038,18 +1038,32 @@ function bz_attendance($atts, $content = null) {
     if($width < 20)
        $width = 100;
 
+    $what = get_the_title();
+    if(isset($atts["event"]))
+    	$what = $atts["event"];
+
     return "<iframe onload=\"
         this.style.height = (30 + this.contentWindow.document.body.scrollHeight) + 'px';
         this.style.border = 'none';
         this.style.width = '".$width."%';
         this.style.padding = '0px';
         this.style.margin = '0 -8px';
+	// if it is hidden, this will fix the size when it becomes visible
+        try {
+                (function(ele) {
+                var i = new IntersectionObserver(function(entries) {
+                        ele.style.height = (30 + ele.contentWindow.document.body.scrollHeight) + 'px';
+                });
+                i.observe(ele);
+                }
+                )(this);
+        } catch(e) {}
         var magic = this;
 	if(!this.hasAttribute('data-first')) {
 		this.setAttribute('data-first', 'set');
         	setTimeout(function() { magic.onload(); }, 1000);
 	}
-    \" src=\"/attendance.php?course_name=".htmlentities(urlencode($course))."&amp;event_name=".htmlentities(urlencode($atts["event"]))."\"></iframe>";
+    \" src=\"/attendance.php?course_name=".htmlentities(urlencode($course))."&amp;event_name=".htmlentities(urlencode($what))."\"></iframe>";
 }
 
 add_shortcode( 'take-attendance', 'bz_attendance' );
