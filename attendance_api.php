@@ -20,7 +20,7 @@ function get_attendance_api_result($course_id, $users) {
 			if(!isset($response["statuses"][$user_id]))
 				$response["statuses"][$user_id] = array("events" => array(), "total_present" => 0, "total_events" => $events_in_the_past);
 			$response["statuses"][$user_id]["events"][] = $user_status;
-			if($user_status == "true" || $user_status == "late") {
+			if($user_status === "true" || $user_status === "late") {
 				// only if it is in the past do we want to set this count
 				if($event["event_time"] && strtotime($event["event_time"]) < time())
 					$response["statuses"][$user_id]["total_present"] += 1;

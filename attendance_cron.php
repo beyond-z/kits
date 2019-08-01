@@ -70,9 +70,9 @@ function load_attendance_result($course_id, $event_name, $students_info) {
 
 	$statement->execute($args);
 	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-		if($row["present"] == "true" || $row["present"] == "late")
+		if($row["present"] === "true" || $row["present"] === "late")
 			$result++;
-		if($row["present"] != "null")
+		if($row["present"] !== "null")
 			$recorded++;
 	}
 
