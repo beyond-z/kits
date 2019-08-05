@@ -32,7 +32,7 @@ if ( version_compare( $GLOBALS['wp_version'], '4.4-alpha', '<' ) ) {
 	require get_template_directory() . '/inc/back-compat.php';
 }
 
-/// pull in the shared courses definition from the 
+/// pull in the shared courses definition from the
 require_once(ABSPATH . "courses.php");
 
 //
@@ -299,7 +299,7 @@ function bz_register_kit() {
 		'show_in_admin_bar'     => true,
 		'show_in_nav_menus'     => true,
 		'can_export'            => true,
-		'has_archive'           => true,		
+		'has_archive'           => true,
 		'exclude_from_search'   => false,
 		'publicly_queryable'    => true,
 		'capability_type'       => 'page',
@@ -353,7 +353,7 @@ function bz_register_activity() {
 		'show_in_admin_bar'     => true,
 		'show_in_nav_menus'     => true,
 		'can_export'            => true,
-		'has_archive'           => true,		
+		'has_archive'           => true,
 		'exclude_from_search'   => false,
 		'publicly_queryable'    => true,
 		'capability_type'       => 'page',
@@ -406,7 +406,7 @@ function bz_register_custom_content() {
 		'show_in_admin_bar'     => true,
 		'show_in_nav_menus'     => true,
 		'can_export'            => true,
-		'has_archive'           => false,		
+		'has_archive'           => false,
 		'exclude_from_search'   => true,
 		'publicly_queryable'    => false,
 		'capability_type'       => 'page',
@@ -462,7 +462,7 @@ function bz_register_course_cpt() {
 		'show_in_admin_bar'     => true,
 		'show_in_nav_menus'     => true,
 		'can_export'            => true,
-		'has_archive'           => true,		
+		'has_archive'           => true,
 		'exclude_from_search'   => false,
 		'publicly_queryable'    => true,
 		'capability_type'       => 'page',
@@ -483,6 +483,7 @@ $bz_scopes = array(
 $bz_facilitators = array(
 	'coach' => 'Coach',
 	'staff' => 'Braven Staff',
+	'both' => 'Coach &amp; Braven Staff',
 	'fellow' => 'Fellow(s)',
 	'other' => 'Other',
 );
@@ -587,6 +588,7 @@ function bz_meta_boxes( $meta_boxes ) {
 				'name' => __( 'Who is facilitating?', 'bz' ),
 				'type' => 'radio',
 				'options' => $bz_facilitators,
+				'std' => 'coach',
 			),
 		),
 	);
@@ -756,9 +758,9 @@ add_action( 'init', 'bz_generate_materials_tax', 0 );
 /** Hide post types we're not using: */
 
 function bz_remove_menus(){
-  
+
   remove_menu_page( 'index.php' );                  //Dashboard
-  remove_menu_page( 'jetpack' );                    //Jetpack* 
+  remove_menu_page( 'jetpack' );                    //Jetpack*
   remove_menu_page( 'edit.php' );                   //Posts
   remove_menu_page( 'upload.php' );                 //Media
   remove_menu_page( 'edit-comments.php' );          //Comments
@@ -767,7 +769,7 @@ function bz_remove_menus(){
   //remove_menu_page( 'users.php' );                  //Users
   //remove_menu_page( 'tools.php' );                  //Tools
   //remove_menu_page( 'options-general.php' );        //Settings
-  
+
 }
 add_action( 'admin_menu', 'bz_remove_menus' );
 
@@ -787,31 +789,31 @@ function bz_mce_buttons_2( $buttons ) {
 add_filter( 'mce_buttons_2', 'bz_mce_buttons_2' );
 
 // Now add the custom styles:
-function bz_mce_before_init_insert_formats( $init_array ) {  
-	$style_formats = array(  
+function bz_mce_before_init_insert_formats( $init_array ) {
+	$style_formats = array(
 		// Each child array in here is a format with its own settings
-		array(  
-			'title' => 'Core activity',  
-			'block' => 'div',  
+		array(
+			'title' => 'Core activity',
+			'block' => 'div',
 			'classes' => 'core',
 			'exact' => true,
 			'wrapper' => true,
-		), 
-		array(  
-			'title' => 'Sub-activity duration',  
-			'block' => 'div',  
+		),
+		array(
+			'title' => 'Sub-activity duration',
+			'block' => 'div',
 			'classes' => 'sub-duration',
 			'exact' => true,
 			'wrapper' => true,
-		), 
-	);  
+		),
+	);
 	// Insert the array, JSON ENCODED, into 'style_formats'
-	$init_array['style_formats'] = json_encode( $style_formats );  
-	
-	return $init_array;  
+	$init_array['style_formats'] = json_encode( $style_formats );
 
-} 
-// Attach callback to 'tiny_mce_before_init' 
+	return $init_array;
+
+}
+// Attach callback to 'tiny_mce_before_init'
 add_filter( 'tiny_mce_before_init', 'bz_mce_before_init_insert_formats' );
 
 // Add a course variable to pass to kits:
@@ -828,7 +830,7 @@ function bz_add_rewrite_rules(){
 add_action('init', 'bz_add_rewrite_rules');
 
 
-/* Generate a prefix for LL titles to show week number: 
+/* Generate a prefix for LL titles to show week number:
 
 
 // collect post IDs in a global array for all the kits that are LLs (or are not defined as anything else):
@@ -846,24 +848,24 @@ function only_lls(){
 		'orderby'                => 'menu_order',
 	);
 	$ckits = new WP_Query( $cargs );
-	if ( $ckits->have_posts() ) { 
-		while ( $ckits->have_posts() ) { 
+	if ( $ckits->have_posts() ) {
+		while ( $ckits->have_posts() ) {
 			// for each query result, test whether it's a LL or blank, and if so add it to the array:
 			$ckits->the_post();
 			$kit_type = get_post_custom_values('bz_kit_type', $post->ID);
 			if ( $kit_type[0] == 'll' || empty($kit_type)  )  {
-				$only_lls[] = $post->ID;	
+				$only_lls[] = $post->ID;
 			}
 		}
 	}
-	return $only_lls;	
+	return $only_lls;
 }
 // Create a "filter" that adds the LL number to relevant kits:
 function bz_kit_title_prefix($title) {
 	$currentID = get_the_ID();
 	global $only_lls;
 	$counter = 0;
-	
+
 	// only apply to user-facing pages:
 	if (is_home() || is_single()) {
 		// find a match with the list of LLs we've compiled:
@@ -871,8 +873,8 @@ function bz_kit_title_prefix($title) {
 			$counter ++;
 			if ($ll == $currentID) {
 				$title = __('Learning Lab ','bz').$counter.': '.$title;
-			} 
-		} 
+			}
+		}
 	}
 	return $title;
 
@@ -955,7 +957,7 @@ function bz_get_cohort_magic_fields($lc_email, $magic_field_names) {
 function bz_show_cohort_magic_fields( $atts, $content = null) {
 
     $a = shortcode_atts( array(
-    	// add a default attribute value: 
+    	// add a default attribute value:
         'fields' => array(),
     ), $atts );
 
@@ -972,7 +974,7 @@ function bz_show_cohort_magic_fields( $atts, $content = null) {
     // $current_user_email = 'aalcones@fb.com';
 
     // Let's see if the kit's designer has provided a list of magic fields as an attribute, and strip any spaces so the list can use either "mf1,mf2" or "mf1, mf2")
-    
+
     $mfields = explode(',', str_replace(' ', '', $a['fields']) );
     $answers = bz_get_cohort_magic_fields($current_user_email, $mfields);
 
@@ -998,7 +1000,7 @@ add_shortcode( 'cohort-answers', 'bz_show_cohort_magic_fields' );
 
 
 /* Add wrapping shortcodes to allow personalizing content by course.
-   Attributes include a comma-separated list of Course slugs and an indication of whether this is a block or inline elemnet. 
+   Attributes include a comma-separated list of Course slugs and an indication of whether this is a block or inline elemnet.
 
    EXAMPLE OF INLINE CONTENT: As a fellow [course-specific scope="inline" courses="sjsu, run"]at one of our first two sites[/course-specific] you're expected to do great.
 
@@ -1011,7 +1013,7 @@ add_shortcode( 'cohort-answers', 'bz_show_cohort_magic_fields' );
 function bz_personalize_content_by_course( $atts, $content = null ) {
 	global $course;
     $a = shortcode_atts( array(
-    	// add a default attribute value: 
+    	// add a default attribute value:
         'courses' => '',
         'scope' => 'block',
     ), $atts );
@@ -1036,18 +1038,32 @@ function bz_attendance($atts, $content = null) {
     if($width < 20)
        $width = 100;
 
+    $what = get_the_title();
+    if(isset($atts["event"]))
+    	$what = $atts["event"];
+
     return "<iframe onload=\"
         this.style.height = (30 + this.contentWindow.document.body.scrollHeight) + 'px';
         this.style.border = 'none';
         this.style.width = '".$width."%';
         this.style.padding = '0px';
         this.style.margin = '0 -8px';
+	// if it is hidden, this will fix the size when it becomes visible
+        try {
+                (function(ele) {
+                var i = new IntersectionObserver(function(entries) {
+                        ele.style.height = (30 + ele.contentWindow.document.body.scrollHeight) + 'px';
+                });
+                i.observe(ele);
+                }
+                )(this);
+        } catch(e) {}
         var magic = this;
 	if(!this.hasAttribute('data-first')) {
 		this.setAttribute('data-first', 'set');
         	setTimeout(function() { magic.onload(); }, 1000);
 	}
-    \" src=\"/attendance.php?course_name=".htmlentities(urlencode($course))."&amp;event_name=".htmlentities(urlencode($atts["event"]))."\"></iframe>";
+    \" src=\"/attendance.php?course_name=".htmlentities(urlencode($course))."&amp;event_name=".htmlentities(urlencode($what))."\"></iframe>";
 }
 
 add_shortcode( 'take-attendance', 'bz_attendance' );

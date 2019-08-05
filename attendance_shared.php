@@ -119,11 +119,14 @@ function populate_times_from_canvas($course_id) {
 }
 
 function isTa($user_email, $cohort_info) {
-	return in_array($user_email, $cohort_info["tas"]);
+	return in_array(strtolower($user_email), $cohort_info["tas"]);
 }
 
 function get_cohorts_info($course_id) {
 	global $WP_CONFIG;
+
+	if(isset($_SESSION["cohort_course_info_$course_id"]))
+		return $_SESSION["cohort_course_info_$course_id"];
 
 	$ch = curl_init();
 	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/bz/course_cohort_information?course_ids[]='.((int) $course_id). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
@@ -150,10 +153,10 @@ function get_cohorts_info($course_id) {
 				$students[] = $enrollment;
 		}
 		if(isset($section["ta_email"]))
-			$tas[] = $section["ta_email"];
+			$tas[] = strtolower($section["ta_email"]);
 	}
 
-	return array(
+	return $_SESSION["cohort_course_info_$course_id"] = array(
 		"lcs" => $lcs,
 		"tas" => $tas,
 		"students" => $students,
@@ -204,7 +207,7 @@ function load_student_status($event_id, $students_info) {
 
 	$statement = $pdo->prepare("
 		SELECT
-			person_id, present
+			person_id, present, reason
 		FROM
 			attendance_people
 		WHERE
@@ -217,6 +220,7 @@ function load_student_status($event_id, $students_info) {
 	$args = array($event_id);
 	$args = array_merge($args, $students);
 
+	$reasons = array();
 	$result = array();
 	$original_result = array();
 
@@ -228,8 +232,22 @@ function load_student_status($event_id, $students_info) {
 	$statement->execute($args);
 	while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
 		// format it as a bool string here so we don't have to get ambiguity later with override strings
-		$result[$row["person_id"]] = $row["present"] ? "true" : "false";
-		$original_result[$row["person_id"]] = $row["present"] ? "true" : "false";
+		$value = "null";
+		if($row["present"] !== null)
+		switch($row["present"]) {
+			case 0:
+				$value = "false";
+			break;
+			case 1:
+				$value = "true";
+			break;
+			case 2:
+				$value = "late";
+			break;
+		}
+		$result[$row["person_id"]] = $value;
+		$original_result[$row["person_id"]] = $value;
+		$reasons[$row["person_id"]] = $row["reason"];
 	}
 
 	// and now we need to load overrides for withdrawn students, etc.
@@ -262,7 +280,10 @@ function load_student_status($event_id, $students_info) {
 		}
 	}
 
-	return $result;
+	return array(
+		"reasons" => $reasons,
+		"result" => $result
+	);
 }
 
 function get_all_events($course_id) {

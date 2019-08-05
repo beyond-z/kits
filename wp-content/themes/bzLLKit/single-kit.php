@@ -51,14 +51,14 @@ get_header(); ?>
 			<h2><?php echo __('Vision', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_vision'][0]);?>
 		</div> <?php
-	} 
+	}
 	// Make sure there's at least the first outcome, then get all three:
 	if (!empty($customfields['bz_kit_outcomes'])){ ?>
 		<div class="kit-component outcomes">
 			<h2><?php echo __('Fellows Will:', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_outcomes'][0]);?>
 		</div> <?php
-	} 
+	}
 
 	// Show goals, if there are any:
 	if (!empty($customfields['bz_kit_goals'])){ ?>
@@ -66,7 +66,7 @@ get_header(); ?>
 			<h2><?php echo __('Goals:', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_goals'][0]);?>
 		</div> <?php
-	} 
+	}
 
 	// Show objectives, if there are any:
 	if (!empty($customfields['bz_kit_objectives'])){ ?>
@@ -74,7 +74,7 @@ get_header(); ?>
 			<h2><?php echo __('Objectives:', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_objectives'][0]);?>
 		</div> <?php
-	} 
+	}
 
 	// Show Look and Feel instructions if there are any:
 	if (!empty($customfields['bz_kit_look_and_feel'])){ ?>
@@ -83,7 +83,7 @@ get_header(); ?>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_look_and_feel'][0]);?>
 		</div> <?php
 	} ?>
-	<?php 
+	<?php
 
 	// Set up materials array to collect while we're iterating throug activities:
 	// Then add the materials listed on the kit itself (i.e. not derived from linked activities):
@@ -97,7 +97,7 @@ get_header(); ?>
 		// Get the activities linked from the kit's agenda list:
 		$activity_links = array();
 		$list_of_links = $customfields['bz_kit_agenda'][0];
-	
+
 		// make an array of clean urls:
 		$dom = new DOMDocument;
 		$dom->loadHTML($list_of_links);
@@ -109,14 +109,14 @@ get_header(); ?>
 
 		foreach ($activity_links as $activity_link) {
 			// Get the post data into our array, if it is a valid id (url_to_postid returns 0 if not)
-			// NOTE: this is not very efficient, because we're using get_post query the DB several times. 
+			// NOTE: this is not very efficient, because we're using get_post query the DB several times.
 			// Might not matter much since it's a low volume app and we can cache things,
 			// but maybe in the future let's upgrade this.
 			$activity_id = url_to_postid($activity_link);
 			if ($activity_id) $activity_posts[] = get_post($activity_id);
 		}
 		if (!empty($activity_posts)) {
-			// If we have any activities associated with this kit, we list them. 
+			// If we have any activities associated with this kit, we list them.
 
 			// First we need to figure out the start time of the first activity, based on the current course the user is viewing:
 	      	$start_time_string = (!empty($course_custom_fields['bz_course_default_start_time'][0])) ? $course_custom_fields['bz_course_default_start_time'][0] : '18:00';
@@ -147,12 +147,12 @@ get_header(); ?>
 
 
 			// Convert the string to a Datetime:
-			$start_time = DateTime::createFromFormat('H:i', $start_time_string); 
+			$start_time = DateTime::createFromFormat('H:i', $start_time_string);
 
 
-			// Make adjustments based on custom offset set for the Kit, 
+			// Make adjustments based on custom offset set for the Kit,
 			// BUT ONLY IF there's no custom start time set per course:
-			
+
 			if (!isset( $custom_times[$course] )) {
 				$start_time_adjust = get_post_custom_values('bz_kit_start_time_adjust', $post->ID);
 
@@ -161,7 +161,7 @@ get_header(); ?>
 					$start_time->sub(new DateInterval('PT'.abs($start_time_adjust[0]).'M'));
 				} else if ($start_time_adjust[0] > 0) {
 					$start_time->add(new DateInterval('PT'.$start_time_adjust[0].'M'));
-				}		
+				}
 
 			}
 
@@ -171,12 +171,12 @@ get_header(); ?>
 				<div id="agenda" class="kit-component agenda">
 					<h2><?php echo __('Agenda','bz');?></h2>
 					<table>
-					<?php 
-					foreach ($activity_posts as $activity_key => $activity_post) { 
+					<?php
+					foreach ($activity_posts as $activity_key => $activity_post) {
 						if ($activity_post->post_status == 'publish') { ?>
 							<tr>
 								<td>
-									<?php 
+									<?php
 									$activity_duration = get_post_meta( $activity_post->ID, 'bz_activity_attributes_minutes', 'true' );
 									// Show start time and add minutes from this activity
 									// forcing (int)$activity_duration to convert empties to zeros.
@@ -189,7 +189,7 @@ get_header(); ?>
 									$start_time->add(new DateInterval('PT'.(int)$activity_duration.'M'));
 									// And store the duration and end time for later:
 									$activity_post['duration'] = (string)(int)$activity_duration;
-									$activity_post['end_time'] = (string)$start_time->format('g:i a');   
+									$activity_post['end_time'] = (string)$start_time->format('g:i a');
 									// Now convert it back to an object:
 									$activity_post = (object)$activity_post;
 									// And save the changes back to the posts array so we can use them in the content:
@@ -213,35 +213,35 @@ get_header(); ?>
 							}
 						}
 					} // end if ($activity_post->post_status == 'publish')
-				} // end foreach 
+				} // end foreach
 				?>
 				</table>
 			</div>
-		<?php  
-	
+		<?php
+
 		}	// end if (!empty($activity_posts))
 	} // end if (!empty(customfields['bz_kit_agenda']))
 	?>
-	
+
 	<?php
 	if (!empty($customfields['bz_kit_prework'])){ ?>
 		<div class="kit-component prework start-collapsed">
 			<h2><?php echo __('Fellows\' Prework', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_prework'][0]);?>
 		</div> <?php
-	} 
+	}
 	?>
-	
+
 	<?php
 	if (!empty($customfields['bz_kit_lc_how_to_prepare'])){ ?>
 		<div class="kit-component lc_how_to_prepare start-collapsed">
 			<h2><?php echo __('Leadership Coaches: How to Prepare', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_lc_how_to_prepare'][0]);?>
 		</div> <?php
-	} 
+	}
 	?>
 
-	
+
 	<?php
 	/*
 	if (!empty($customfields['bz_kit_how_to_prep'])){ ?>
@@ -249,12 +249,12 @@ get_header(); ?>
 			<h2><?php echo __('How to Prepare', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_how_to_prep'][0]);?>
 		</div> <?php
-	} 
+	}
 	*/
 	?>
 
 	<?php
-	
+
 	if (!empty($materials)) { ?>
 		<div class="kit-component materials start-collapsed">
 			<h2><?php echo __('Materials','bz'); ?></h2>
@@ -271,30 +271,30 @@ get_header(); ?>
 			</ul>
 		</div>
 	<?php } // end if (!empty($materials)) ?>
-  
+
   <?php
 	if (!empty($customfields['bz_kit_important'])){ ?>
 		<div class="kit-component important">
 			<h2><?php echo __('What\'s most important', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_important'][0]);?>
 		</div> <?php
-	} 
+	}
 	?>
-  
-	<?php 
+
+	<?php
 	// query full activity content and display it:
 
 	if (!empty($activity_posts)) { ?>
 		<div class="kit-component sub-activities non-collapsible">
 			<h2 id="activity-plan-header"><?php echo __('Activity Plan', 'bz'); ?></h2>
-			<?php 
-			
-			foreach ($activity_posts as $activity_post) {	
+			<?php
+
+			foreach ($activity_posts as $activity_post) {
 
 				// See who is the facilitator so we can apply a different style to the activity:
 				global $bz_facilitators;
 				$activity_facilitator = get_post_meta( $activity_post->ID, 'bz_activity_attributes_facilitator', 'true' ); ?>
-					
+
 
 				<article class="activity <?php echo $activity_facilitator;?>" id="<?php echo $activity_post->post_name; ?>">
 					<header class="activity-header">
@@ -304,12 +304,16 @@ get_header(); ?>
 							<span class="minutes"><?php echo $activity_post->duration .'&nbsp;'. __('Minutes', 'bz'); ?></span>
 							<?php if ($activity_facilitator) { ?>
 								<span class="facilitator facilitator-<?php echo $activity_facilitator;?>">
-									<?php if ('coach' != $activity_facilitator) echo __('Facilitated by ', 'bz') . $bz_facilitators[$activity_facilitator]; // get user-facing title by key. $bz_facilitators is defined in functions.php ?>
+									<?php echo __('Facilitated by ', 'bz') . $bz_facilitators[$activity_facilitator]; // get user-facing title by key. $bz_facilitators is defined in functions.php ?>
+								</span>
+							<?php } else { ?>
+								<span class="facilitator facilitator-coach">
+									<?php echo 'Facilitated by Coach'; ?>
 								</span>
 							<?php } // end if facilitator ?>
-						</div>						
+						</div>
 						<span class="activity-title"><?php echo $activity_post->post_title;?></span>
-						<?php 
+						<?php
 							global $bz_scopes;
 							$activity_scope = get_post_meta( $activity_post->ID, 'bz_activity_attributes_group_scope', 'true' );
 							if ($activity_scope) { ?>
@@ -319,7 +323,7 @@ get_header(); ?>
 							<?php } // end if scope ?>
 						<div class="activity-outcomes"><?php echo apply_filters('the_content', $activity_post->post_excerpt); ?></div>
 					</header>
-					
+
 					<div class="activity-content"><?php echo apply_filters('the_content', $activity_post->post_content); ?></div>
 					<?php if ( current_user_can( 'edit_posts' ) ) { ?>
 						<footer class="activity-footer">
@@ -336,33 +340,33 @@ get_header(); ?>
 			<?php } // end foreach */ ?>
 		</div>
 	<?php } //!empty($activity_posts)  ?>
-  
+
 	<?php
 	if (!empty($customfields['bz_kit_after'])){ ?>
 		<div class="kit-component important">
 			<h2><?php echo __('Fellows: After Learning Lab', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_after'][0]);?>
 		</div> <?php
-	} 
+	}
 	?>
-  
+
 	<?php
-	
+
 	if (!empty($customfields['bz_kit_appendix'])){ ?>
 		<div class="kit-component appendix start-collapsed">
 			<h2><?php echo __('Appendix', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_appendix'][0]);?>
 		</div> <?php
-	} 
+	}
 	?>
-	
-	<?php 
+
+	<?php
 	// Iterate through logistics fields if there are any
 	global $bz_logistics; // from functions.php
 	if(!empty(array_intersect_key($customfields, $bz_logistics))) { ?>
 		<div id="logistics" class="kit-component for-staff logistics start-collapsed">
 			<h2 id="logistics-header"><?php echo __('Logistical Information', 'bz');?></h2>
-			<?php 
+			<?php
 			// and now iterate through the logistics fields:
 			foreach ($bz_logistics as $bz_logistics_field_key => $bz_logistics_field_attributes) {
 				if (!empty($customfields[$bz_logistics_field_key])){ ?>
@@ -370,18 +374,18 @@ get_header(); ?>
 						<h4><?php echo $bz_logistics_field_attributes['name'] ?></h4>
 						<?php echo apply_filters('the_content',$customfields[$bz_logistics_field_key][0]);?>
 					</div> <?php
-				} 
+				}
 			} // end foreach
 			?>
 		</div>
 	<?php	} ?>
-	<?php 
+	<?php
 	// Iterate through staff tasks if there are any:
 	global $bz_staff_tasks; // from functions.php
 	if(!empty(array_intersect_key($customfields, $bz_staff_tasks))) { ?>
 		<div id="staff-tasks" class="kit-component for-staff staff-tasks start-collapsed">
 			<h2 id="staff-tasks-header"><?php echo __('What Staff Needs To Do', 'bz');?></h2>
-			<?php 
+			<?php
 			// and now iterate through the logistics fields:
 			foreach ($bz_staff_tasks as $bz_staff_tasks_field_key => $bz_staff_tasks_attributes) {
 				if (!empty($customfields[$bz_staff_tasks_field_key])){ ?>
@@ -389,7 +393,7 @@ get_header(); ?>
 						<h4><?php echo $bz_staff_tasks_attributes['name'] ?></h4>
 						<?php echo apply_filters('the_content',$customfields[$bz_staff_tasks_field_key][0]);?>
 					</div> <?php
-				} 
+				}
 			} // end foreach
 			?>
 		</div>

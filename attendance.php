@@ -32,6 +32,9 @@ SET NAMES utf8mb4;
 		person_id INTEGER NOT NULL,
 		present INTEGER NULL, -- null means unknown, 0 means no, 1 means there, 2 means late
 		dummy_id INTEGER NOT NULL AUTO_INCREMENT,
+		reason TEXT NULL,
+		updated_at TIMESTAMP NOT NULL DEFAULT now(),
+		updated_by TEXT,
 		PRIMARY_KEY (dummy_id),
 		UNIQUE KEY unique_index (event_id, person_id),
 		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE
@@ -49,6 +52,11 @@ SET NAMES utf8mb4;
 		PRIMARY KEY (dummy_id),
 		UNIQUE KEY unique_index (event_id, lc_email),
 		FOREIGN KEY (event_id) REFERENCES attendance_events(id) ON DELETE CASCADE
+	) DEFAULT CHARACTER SET=utf8mb4;
+
+	CREATE TABLE attendance_courses (
+		id INTEGER PRIMARY KEY, -- should match the canvas id
+		late_threshold VARCHAR(40) DEFAULT '5 mins'
 	) DEFAULT CHARACTER SET=utf8mb4;
 
 	CREATE TABLE attendance_people_statuses (
@@ -177,23 +185,54 @@ function set_special_status($course_id, $student_id, $override) {
 
 }
 
-function set_attendance($event_id, $person_id, $present) {
+function set_reason($event_id, $person_id, $reason) {
 	global $pdo;
 
 	$statement = $pdo->prepare("
 		INSERT INTO attendance_people
-			(event_id, person_id, present)
+			(event_id, person_id, reason, updated_at, updated_by)
 		VALUES
-			(?, ?, ?)
+			(?, ?, ?, now(), ?)
 		ON DUPLICATE KEY UPDATE
-			present = ?
+			reason = ?,
+			updated_at = now(),
+			updated_by = ?
+	");
+
+	$statement->execute(array(
+		$event_id,
+		$person_id,
+		$reason,
+		$_SESSION["user"],
+		$reason,
+		$_SESSION["user"]
+	));
+}
+
+function set_attendance($event_id, $person_id, $present) {
+	global $pdo;
+
+	if($present == '')
+		$present = null;
+
+	$statement = $pdo->prepare("
+		INSERT INTO attendance_people
+			(event_id, person_id, present, updated_at, updated_by)
+		VALUES
+			(?, ?, ?, now(), ?)
+		ON DUPLICATE KEY UPDATE
+			present = ?,
+			updated_at = now(),
+			updated_by = ?
 	");
 
 	$statement->execute(array(
 		$event_id,
 		$person_id,
 		$present,
-		$present
+		$_SESSION["user"],
+		$present,
+		$_SESSION["user"]
 	));
 
 	// We need to email staff if stuff changes after about thrusday at noon the week of the event.
@@ -302,7 +341,7 @@ function sso() {
 		$user = $xml->getElementsByTagNameNS("*", "user")->item(0)->textContent;
 
 		// login successful
-		$_SESSION["user"] = $user;
+		$_SESSION["user"] = strtolower($user);
 			//echo "User " . htmlentities($user) . " is not authorized. Try logging out of SSO first.";
 
 		header("Location: " . $coming_from);
@@ -400,8 +439,13 @@ requireLogin();
 		return $arr[$cnt - 1];
 	}
 
+	$is_staff = strpos($_SESSION["user"], "@bebraven.org") !== FALSE || strpos($_SESSION["user"], "@beyondz.org") !== FALSE;
+
 	if(isset($_POST["operation"])) {
 		switch($_POST["operation"]) {
+			case "reason":
+				set_reason($_POST["event_id"], $_POST["student_id"], $_POST["reason"]);
+			break;
 			case "save":
 				set_attendance($_POST["event_id"], $_POST["student_id"], $_POST["present"]);
 			break;
@@ -423,14 +467,37 @@ requireLogin();
 				set_event_sort_setting($_POST["event_id"], $_POST["sort_mode"]);
 				header("Location: attendance.php?event_id=".urlencode($_POST["event_id"])."&lc=".urlencode($_POST["lc_email"])."&course_id=".urlencode($_POST["course_id"]));
 			break;
+			case "masquerade":
+				$_SESSION["masquerading_user"] = $_SESSION["user"];
+				$_SESSION["user"] = $_POST["as"];
+
+				header("Location: attendance.php");
+				exit;
+			break;
+			case "stop_masquerade":
+				$_SESSION["user"] = $_SESSION["masquerading_user"];
+				unset($_SESSION["masquerading_user"]);
+
+				header("Location: {$_SERVER["HTTP_REFERER"]}");
+				exit;
+			break;
 			default:
 				// this space intentionally left blank
 		}
 		exit;
 	}
 
+	if((isset($_SESSION["masquerading_user"]) || $is_staff) && isset($_GET["operation"]) && $_GET["operation"] == "masquerade") {
+		?>
+		<form method="POST">
+			<input type="hidden" name="operation" value="masquerade" />
 
-	$is_staff = strpos($_SESSION["user"], "@bebraven.org") !== FALSE || strpos($_SESSION["user"], "@beyondz.org") !== FALSE;
+			<input type="email" name="as" placeholder="user email" />
+
+			<button type="submit">Masquerade</button>
+		<?php
+		exit;
+	}
 
 	// this is set temporarily to figure out the course, then later lc_email is set again
 	$lc_email = ($is_staff && isset($_REQUEST["lc"]) && $_REQUEST["lc"] != "") ? $_REQUEST["lc"] : $_SESSION["user"];
@@ -463,9 +530,30 @@ requireLogin();
 		exit;
 	}
 
+	function get_course_late_definition($course_id) {
+		global $pdo;
+
+		$statement = $pdo->prepare("
+			SELECT
+				late_threshold
+			FROM
+				attendance_courses
+			WHERE
+				id = ?
+		");
+
+		$statement->execute(array($course_id));
+		while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+			return $row["late_threshold"];
+		}
+
+		return "5 min";
+	}
+
 	$event_id = 0;
 	$event_name = "";
 	$event_info = null;
+	$late_definition = get_course_late_definition($course_id);
 	if(isset($_GET["event_id"]) && $_GET["event_id"] != "") {
 		$event_id = $_GET["event_id"];
 		$event_info = get_event_info($event_id);
@@ -491,6 +579,8 @@ requireLogin();
 	function get_student_list($lc, $sort_method = 1) {
 		global $cohort_info;
 
+		$lc = strtolower($lc);
+
 		$already_there = array();
 
 		$list = array();
@@ -499,8 +589,12 @@ requireLogin();
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
 				$enrollment["lc_name"] = $section["lc_name"];
-				$enrollment["lc_email"] = $section["lc_email"];
+				$enrollment["lc_email"] = strtolower($section["lc_email"]);
 				$enrollment["section_name"] = $section["name"];
+				// need to check non-enrollments for schwab's duo-LC setup
+				if($lc != null && $enrollment["lc_email"] == $lc) {
+					$keep_this_one = true;
+				}
 				if($enrollment["type"] == "TaEnrollment") {
 					if($lc != null && ($enrollment["lc_email"] == $lc || $enrollment["email"] == $lc || $enrollment["contact_email"] == $lc))
 						$keep_this_one = true;
@@ -554,13 +648,16 @@ requireLogin();
 	if(!isset($_GET["download"])) {
 		$student_list = array();
 		$student_status = array();
+		$student_reasons = array();
 		$student_list = get_student_list(((!isset($_GET["lc"]) || $_GET["lc"] == "All") && $can_see_all) ? null : $lc_email, $event_info ? $event_info["sort_mode"] : 0);
 		if($event_id) {
-			$student_status[$event_id] = load_student_status($event_id, $student_list);
+			$tmp = load_student_status($event_id, $student_list);
+			$student_status[$event_id] = $tmp["result"];
+			$student_reasons[$event_id] = $tmp["reasons"];
 		} else {
 			$events = get_all_events($course_id);
 			foreach($events as $event) {
-				$student_status[$event["id"]] = load_student_status($event["id"], $student_list);
+				$student_status[$event["id"]] = load_student_status($event["id"], $student_list)["result"];
 			}
 		}
 	}
@@ -582,7 +679,7 @@ requireLogin();
 			$student_list = get_student_list($lc_email);
 			$student_status = array();
 			foreach($events as $event) {
-				$student_status[$event["id"]] = load_student_status($event["id"], $student_list);
+				$student_status[$event["id"]] = load_student_status($event["id"], $student_list)["result"];
 			}
 			foreach($student_list as $student) {
 				$data = array();
@@ -622,51 +719,37 @@ requireLogin();
 		exit($string);
 	}
 
-	function checkbox_for($student, $event_id, $abbreviate) {
-		global $student_status;
-		$sta = $student_status[$event_id][$student["id"]];
-		if($sta == "true" || $sta == "false" || $sta == "null" || $sta == "") {
-		?>
-			<span class="boxes-container">
-			<label>
-			<input
-				onchange="recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 1 : 0);"
-				type="radio"
-				value="true"
-				name="<?php echo $event_id . '_' . $student["id"]; ?>"
-				data-event-id="<?php echo $event_id; ?>"
-				data-student-name="<?php echo htmlentities($student["name"]); ?>"
-				data-student-id="<?php echo htmlentities($student["id"]); ?>"
-				<?php if($sta === "true") echo "checked=\"checked\""; ?>
-			/>
-			P<?php if(!$abbreviate) echo "resent"; ?>
-			</label>
-
-			<label>
-			<input
-				onchange="recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 0 : 1);"
-				type="radio"
-				value="false"
-				name="<?php echo $event_id . '_' . $student["id"]; ?>"
-				data-event-id="<?php echo $event_id; ?>"
-				data-student-name="<?php echo htmlentities($student["name"]); ?>"
-				data-student-id="<?php echo htmlentities($student["id"]); ?>"
-				<?php if($sta === "false") echo "checked=\"checked\""; ?>
-			/>
-			A<?php if(!$abbreviate) echo "bsent"; ?>
-			</label>
-			</span>
-		<?php
-		} else {
-			echo $sta;
-		}
-		return $sta == "true" || $sta == "W";
+	function status_is_changeable_by_user($sta) {
+		return ($sta == "true" || $sta == "false" || $sta == "late" || $sta == "null" || $sta == "");
 	}
+
 ?><!DOCTYPE html>
 <html>
 <head>
 <title>Attendance Tracker</title>
 <style>
+	.main-attendance-view tr th:nth-child(4), .main-attendance-view tr:not(:last-child) td:nth-child(4) {
+		background-color: rgba(226,226,226, 0.3);
+	}
+	.main-attendance-view tr th {
+		padding-top: 15px;
+	}
+	.late.checked {
+		background-color: white;
+		border-color: #cecdcd;
+	}
+	.undo {
+		border: none;
+		background: transparent;
+		color: #999;
+		text-transform: uppercase;
+		text-decoration: underline;
+		cursor: pointer;
+		visibility: hidden;
+	}
+	.boxes-container:hover .undo.possible {
+		visibility: visible;
+	}
 	.attendance-individual > span:first-child {
 		width: 10em;
 	}
@@ -683,9 +766,6 @@ requireLogin();
 	}
 	.attendance-individual input[type=radio] {
 		vertical-align: baseline;
-	}
-	.attendance-individual .boxes-container {
-		white-space: nowrap;
 	}
 	form.basic {
 		display: inline;
@@ -748,6 +828,88 @@ requireLogin();
 		padding: 2em;
 	}
 
+	label {
+		cursor: pointer;
+	}
+
+	.boxes-container {
+		white-space: nowrap;
+		display: block; /* fallback in case flex isn't supported */
+		display: flex;
+		font-size: 90%;
+	}
+
+	.boxes-container input {
+		display: none;
+	}
+
+	.boxes-container input + span {
+		display: inline-block;
+		padding: 0.5em 0.75em;
+		background-color: white;
+		border-color: #cecdcd;
+		border-style: solid;
+	}
+
+	.boxes-container .present span {
+		border-width: 1px 1px 1px 1px;
+		border-radius: .5em 0 0 .5em;
+	}
+	.boxes-container .absent span {
+		border-width: 1px 1px 1px 1px;
+		border-radius: 0 .5em .5em 0;
+	}
+
+	.boxes-container .present input:checked + span {
+		background-color: #43cc6e;
+		border-color: #2cb155;
+	}
+
+	.boxes-container .absent input:checked + span {
+		background-color: #fb6a6a;
+		border-color:#e04646;
+	}
+
+	.late{
+		display: inline-block;
+		padding: 0.5em 0.75em;
+		background-color: transparent;
+		border-color: transparent;
+		border-radius: .5em;
+		border-style: solid;
+		border-width: 1px;
+		font-size: 90%;
+	}
+
+	.late span {
+		visibility: hidden;
+	}
+
+	.late:hover span,
+	.late input:checked + span {
+		visibility: visible;
+	}
+
+	input[name=reason] {
+		box-sizing: border-box;
+		width: 100%;
+		font-size:90%;
+	}
+
+	tr.reason-description, 	tr.reason-description td {
+		background-color:white;
+		color: #999;
+		font-style: italic;
+	}
+
+	input[name=reason]:not(:focus) {
+		background: transparent;
+		background-repeat: no-repeat;
+		background-position: right center;
+		padding-right: 24px;
+		background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHg9IjBweCIgeT0iMHB4Igp3aWR0aD0iMjQiIGhlaWdodD0iMjQiCnZpZXdCb3g9IjAgMCAyNCAyNCIKc3R5bGU9IiBmaWxsOiMwMDAwMDA7Ij4gICAgPHBhdGggZD0iTSA3LjQyOTY4NzUgOS41IEwgNS45Mjk2ODc1IDExIEwgMTIgMTcuMDcwMzEyIEwgMTguMDcwMzEyIDExIEwgMTYuNTcwMzEyIDkuNSBMIDEyIDE0LjA3MDMxMiBMIDcuNDI5Njg3NSA5LjUgeiI+PC9wYXRoPjwvc3ZnPg==');
+		border: none;
+	}
 </style>
 <script>
 	// FIXME: make this a multi-select UI and maybe be able to set the effective date
@@ -791,6 +953,41 @@ requireLogin();
 		return false;
 	}
 
+	function recordReason(ele, event_id, student_id, reason) {
+		ele.parentNode.classList.add("saving");
+		ele.parentNode.classList.remove("error-saving");
+		var http = new XMLHttpRequest();
+		http.open("POST", location.href, true);
+
+		var data = "";
+		data += "operation=" + encodeURIComponent("reason");
+		data += "&";
+		data += "event_id=" + encodeURIComponent(event_id);
+		data += "&";
+		data += "student_id=" + encodeURIComponent(student_id);
+		data += "&";
+		data += "reason=" + encodeURIComponent(reason);
+
+		http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		http.onerror = function() {
+			ele.parentNode.classList.remove("saving");
+			ele.parentNode.classList.add("error-saving");
+			alert('It didn\'t save. Please make sure you are online and try again.');
+		};
+		http.onload = function() {
+			if(http.responseText == "{\"error\":\"not_logged_in\"}") {
+				alert('Your login session expired. Please refresh the page and log back in, then finish attendance.');
+				return;
+			}
+			ele.parentNode.classList.remove("saving");
+			ele.parentNode.classList.add("saved");
+			setTimeout(function() {
+				ele.parentNode.classList.remove("saved");
+			}, 1000);
+		};
+		http.send(data);
+	}
+
 	function recordChange(ele, event_id, student_id, present) {
 		ele.parentNode.classList.add("saving");
 		ele.parentNode.classList.remove("error-saving");
@@ -822,35 +1019,6 @@ requireLogin();
 			setTimeout(function() {
 				ele.parentNode.classList.remove("saved");
 			}, 1000);
-
-
-			var total = 0;
-			var there = 0;
-			var p = ele;
-			while(p && p.tagName != "TR") {
-				p = p.parentNode;
-			}
-			if(p) {
-				var inputs = p.querySelectorAll("input");
-				for(var a = 0; a < inputs.length; a++) {
-					if(inputs[a].getAttribute("value") === "true") {
-						total++;
-						if(inputs[a].checked)
-							there++;
-					}
-				}
-				p.querySelector(".percent").textContent = Math.round(there * 100 / total);
-
-
-				var pe = document.getElementById("percent-" + ele.getAttribute("data-event-id"));
-				var delta = 0;
-				if(ele.getAttribute("value") == "true")
-					delta = ele.checked ? 1 : -1;
-				if(ele.getAttribute("value") == "false")
-					delta = ele.checked ? -1 : 1;
-				pe.setAttribute("data-there", (pe.getAttribute("data-there")|0) + delta);
-				pe.textContent = Math.round(pe.getAttribute("data-there") * 100 / pe.getAttribute("data-total"));
-			}
 		};
 		http.send(data);
 	}
@@ -858,18 +1026,18 @@ requireLogin();
 <style>
 	.saving {
 		transition: all ease-out 1s;
-		background-color: #666;
+		background-color: #43cc6e;
 	}
 
 	.saved {
 
 		transition: all ease-out 1s;
-		background-color: #0f0;
+		background-color: transparent;
 	}
 
 	.error-saving {
 		transition: all ease-out 1s;
-		background-color: #f00;
+		background-color: #fb6a6a;
 	}
 
 	table {
@@ -890,28 +1058,77 @@ requireLogin();
 	td:first-child {
 		text-align: right;
 	}
+
+	.main-attendance-view {
+		font-weight: normal;
+		font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+	}
+
+	.main-attendance-view .when {
+		display: block;
+		font-weight: normal;
+		text-transform: uppercase;
+		font-size: 80%;
+	}
+
+	.main-attendance-view .what, .main-attendance-view .when {
+		white-space: nowrap;
+	}
+
+	.main-attendance-view td,
+	.main-attendance-view th {
+		text-align: left;
+		border: none;
+		padding: 0.5em;
+	}
+
+	.main-attendance-view tbody tr:nth-child(2n + 1) {
+		background-color: #eee;
+	}
+
+	#save-button-holder input{
+		background: #eb3b45;
+		-webkit-border-radius: 5px;
+		-moz-border-radius: 5px;
+		border-radius: 5px;
+		color: #fff !important;
+		cursor: pointer;
+		display: inline-block;
+		text-align: center;
+		vertical-align: middle;
+		font-family: "TradeGothicNo.20-CondBold", "Oswald", "Arial Narrow", sans-serif;
+		text-transform: uppercase;
+		font-size: 21px;
+		font-weight: 400;
+		letter-spacing: 1px;
+		line-height: 1.333em;
+		margin: 30px auto 0;
+		display: block;
+		padding-bottom: 10px;
+		padding-left: 50px;
+		padding-right: 50px;
+		padding-top: 10px;
+		text-transform: uppercase;
+		text-shadow: none;
+		: all 0.5s ease 0s;
+		border-color:white;
+	}
+
+	#save-button-holder input:hover, #save-button-holder input:hover, #save-button-holder input:hover {
+		background: #000000;
+		color: #fff !important;
+	}
 </style>
 </head>
 <body>
 	<!--
-	Cohort: Course 41, lc@bebraven.org
-	Event: LL 1, June 21
-
-	So they display for any given cohort lists
-		Event       Event      Event 	Percentage
-	Name     [x]         [x]        [x]
-	Name
-	Name
-	Percentage
-
-	It can also display just one column at a time.
+		There's three views: read only grid of all info with links and withdrawn statuses,
+		attendance of single event, and checklist.
 	-->
 
 	<?php
 		if(count($student_list) != 0) {
-	?>
-		Attendance for <?php echo htmlentities($single_event ? $event_name : "all LLs/events"); ?>
-	<?php
+			echo htmlentities($single_event ? $event_name : "All LLs/events");
 		}
 
 		if($can_see_all) {
@@ -919,7 +1136,7 @@ requireLogin();
 		<form>
 			<input type="hidden" name="course_id" value="<?php echo (int) $course_id; ?>" />
 			<input type="hidden" name="event_name" value="<?php echo htmlentities($event_name); ?>" />
-			<select name="lc">
+			<select name="lc" onchange="this.form.submit();">
 				<option>All</option>
 				<?php
 					usort($cohort_info["lcs"], "cmp1");
@@ -938,7 +1155,9 @@ requireLogin();
 					}
 				?>
 			</select>
-			<input type="submit" value="Switch Cohort" />
+			<noscript>
+				<input type="submit" value="Switch Cohort" />
+			</noscript>
 		</form>
 	<?php
 		}
@@ -946,37 +1165,201 @@ requireLogin();
 		if(count($student_list) == 0) {
 			echo "<p>The cohort leader should now take attendance.</p>";
 		} else {
-	?>
-
-		<?php
-			$tag = "li";
-			$columns = 0;
+			// FIXME: move this logic to an explicit DB column
+			$checklist_view = strpos($event_name, ":") !== false;
 			if($single_event) {
-				$tag = "li";
-				echo "<ol>";
+				if($checklist_view) {
+					// the simple checklist like for 1:1s
+					echo "<ol class=\"checklist-style\">";
+
+					foreach($student_list as $student) {
+						if($event_info && $event_info["sort_mode"] == 0 && $student["lc_name"] != $last_lc) {
+							echo "<h4>".(htmlentities($student["section_name"]))."</h4>";
+							$last_lc = $student["lc_name"];
+						}
+
+						echo "<li class=\"attendance-individual\">";//<label>";
+
+						global $student_status;
+						$sta = $student_status[$event_id][$student["id"]];
+						if(status_is_changeable_by_user($sta)) {
+						?>
+							<label>
+							<input
+								onchange="recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 1 : 0);"
+								type="checkbox"
+								value="true"
+								name="<?php echo $event_id . '_' . $student["id"]; ?>"
+								data-event-id="<?php echo $event_id; ?>"
+								data-student-name="<?php echo htmlentities($student["name"]); ?>"
+								data-student-id="<?php echo htmlentities($student["id"]); ?>"
+								<?php if($sta === "true") echo "checked=\"checked\""; ?>
+							/>
+							<?php echo "<span>" . htmlentities($student["name"]) . "</span>"; ?>
+							</label>
+						<?php
+						} else {
+							echo $sta;
+						}
+						echo "</li>";//"</label></li>";
+					}
+					echo "</ol>";
+				} else {
+					// the main attendance view
+					?>
+					<table class="main-attendance-view">
+					<thead>
+					<tr>
+						<th></th>
+						<th>
+							<span class="when">Start of Learning Lab</span>
+							<span class="what">Take Attendance</span>
+						</th>
+						<th>
+							<span class="when">Over <?php echo htmlentities($late_definition); ?> late?</span>
+							<span class="what">Track Punctuality</span>
+						</th>
+						<th>
+							<span class="when">Prior to Learning Lab</span>
+							<span class="what">Add messages from Fellows</span>
+						</th>
+					</tr>
+					</thead>
+					<tbody>
+					<?php
+
+					foreach($student_list as $student) {
+						/*
+						if($event_info && $event_info["sort_mode"] == 0 && $student["lc_name"] != $last_lc) {
+							echo "<h4>".(htmlentities($student["section_name"]))."</h4>";
+							$last_lc = $student["lc_name"];
+						}
+						*/
+
+						echo "<tr>";
+						echo "<td>" . htmlentities($student["name"]) . "</td>";
+
+						global $student_status;
+						global $student_reasons;
+						$sta = $student_status[$event_id][$student["id"]];
+						$reason = isset($student_reasons[$event_id][$student["id"]]) ? $student_reasons[$event_id][$student["id"]] : '';
+						if(status_is_changeable_by_user($sta)) {
+						?>
+							<td>
+							<span class="boxes-container">
+							<label class="present">
+							<input
+								onchange="
+									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 1 : 0);
+									this.parentNode.parentNode.parentNode.querySelector('.undo').classList.add('possible');
+								"
+								type="radio"
+								value="true"
+								name="<?php echo $event_id . '_' . $student["id"]; ?>"
+								data-event-id="<?php echo $event_id; ?>"
+								data-student-name="<?php echo htmlentities($student["name"]); ?>"
+								data-student-id="<?php echo htmlentities($student["id"]); ?>"
+								<?php if($sta === "true" || $sta === "late") echo "checked=\"checked\""; ?>
+							/>
+								<span>Present</span>
+							</label>
+
+							<label class="absent">
+							<input
+								onchange="
+									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 0 : 1);
+									if(this.checked) {
+										this.parentNode.parentNode.parentNode.parentNode.querySelector('input[value=&quot;late&quot;]').checked = false;
+										this.parentNode.parentNode.parentNode.parentNode.querySelector('.late').classList.remove('checked');
+									}
+									this.parentNode.parentNode.parentNode.querySelector('.undo').classList.add('possible');
+								"
+								type="radio"
+								value="false"
+								name="<?php echo $event_id . '_' . $student["id"]; ?>"
+								data-event-id="<?php echo $event_id; ?>"
+								data-student-name="<?php echo htmlentities($student["name"]); ?>"
+								data-student-id="<?php echo htmlentities($student["id"]); ?>"
+								<?php if($sta === "false") echo "checked=\"checked\""; ?>
+							/>
+								<span>Absent</span>
+							</label>
+							<button class="undo <?php if($sta != "null") echo "possible";?>" type="button"
+								data-event-id="<?php echo $event_id; ?>"
+								data-student-name="<?php echo htmlentities($student["name"]); ?>"
+								data-student-id="<?php echo htmlentities($student["id"]); ?>"
+								onclick="
+									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), '');
+									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;late&quot;]').checked = false;
+									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;true&quot;]').checked = false;
+									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;false&quot;]').checked = false;
+
+									this.classList.remove('possible');
+								"
+							>Undo</button>
+							</span>
+							</td>
+							<td>
+								<label class="late <?php if($sta === "late") echo 'checked'; ?>"><input type="checkbox" onchange="
+									recordChange(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.checked ? 2 : 1);
+									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;false&quot;]').checked = false;
+									this.parentNode.parentNode.parentNode.querySelector('input[value=&quot;true&quot;]').checked = true;
+									if(this.checked) this.parentNode.classList.add('checked'); else this.parentNode.classList.remove('checked');
+								"
+								name="<?php echo $event_id . '_' . $student["id"] . '_late'; ?>"
+								data-event-id="<?php echo $event_id; ?>"
+								data-student-name="<?php echo htmlentities($student["name"]); ?>"
+								data-student-id="<?php echo htmlentities($student["id"]); ?>"
+								value="late"
+								<?php if($sta === "late") echo "checked=\"checked\""; ?>
+								/> <span>Late</span></label>
+							</td>
+							<td>
+								<input type="text" name="reason" list="reason_list"
+								data-event-id="<?php echo $event_id; ?>"
+								data-student-name="<?php echo htmlentities($student["name"]); ?>"
+								data-student-id="<?php echo htmlentities($student["id"]); ?>"
+								value="<?php echo htmlentities($reason) ?>"
+								onfocus="this.oldValue = this.value; this.value = '';"
+								onblur="if(this.oldValue) this.value = this.oldValue; else if(this.value == '') this.onchange();"
+								onkeydown="this.oldValue = null;"
+								oninput="this.oldValue = null; autocompleteHacks(this);"
+								placeholder="Reason for absence"
+								onchange="
+									recordReason(this, this.getAttribute('data-event-id'), this.getAttribute('data-student-id'), this.value);
+								" />
+							</td>
+						<?php
+						} else {
+							echo "<td colspan=\"3\">";
+							echo $sta;
+							echo "</td>";
+						}
+						echo "</tr>";
+					}
+					echo "<tr class='reason-description'><td></td><td></td><td></td><td><small>Only use this field if a student reached out to you before missing or being late to a class.</small></td></tr>";
+					echo "</tbody>";
+					echo "</table>";
+
+					echo '<div id="save-button-holder"><input type="button" onclick="alert(&quot;Your changes are saved, thank you.&quot;);" value="Save" /></div>';
+					echo '<br><br>';
+				}
+
+				echo "<a href=\"attendance.php?course_id=$course_id&amp;lc=".urlencode($lc_email)."\" target=\"_TOP\">See All LLs/Events</a>";
+				if($is_staff) echo " | ";
 			} else {
+				// the read-only table view
 				echo "<table>";
 				echo "<tr><th>Student</th>";
-				$columns++;
 				foreach($events as $event) {
 					echo "<th><a href=\"attendance.php?course_id=".urlencode($course_id)."&amp;lc=".urlencode($lc_email)."&amp;event_name=".urlencode($event["name"])."\">".htmlentities($event["name"])."</a></th>";
-					$columns++;
 				}
-				$columns++;
-				echo "<th>Total</th>";
 				echo "</tr>";
 				$tag = "td";
-			}
-			$last_lc = "";
-			foreach($student_list as $student) {
-				if($tag == "li") {
-					if($event_info && $event_info["sort_mode"] == 0 && $student["lc_name"] != $last_lc) {
-						echo "<h4>".(htmlentities($student["section_name"]))."</h4>";
-						$last_lc = $student["lc_name"];
-					}
 
-					echo "<li class=\"attendance-individual\">";//<label>";
-				} else {
+				$last_lc = "";
+
+				foreach($student_list as $student) {
 					if($student["lc_name"] != $last_lc) {
 						echo "<tr><th style=\"text-align: left;\" colspan=\"".($columns)."\"><abbr title=\"".(htmlentities($student["lc_name"]))."\">".htmlentities($student["section_name"])."</abbr> ";
 
@@ -1006,57 +1389,21 @@ requireLogin();
 						echo htmlentities($student["name"]);
 					}
 					echo "</td>";
-				}
 
-				if($tag == "li")
-					echo "<span>" . htmlentities($student["name"]) . "</span>";
-
-				if($single_event)
-					checkbox_for($student, $event_id, false);
-				else {
-					$sthere = 0;
-					$stotal = 0;
 					foreach($events as $event) {
-						$stotal += 1;
 						echo "<td>";
-						$sthere += checkbox_for($student, $event["id"], true) ? 1 : 0;
+						global $student_status;
+						echo $student_status[$event["id"]][$student["id"]];
 						echo "</td>";
 					}
+					echo "</tr>";
+				}
 
-					echo "<td><span class=\"percent\">" . round($sthere * 100 / $stotal) . "</span>%</td>";
-				}
-			?>
-		<?php
-			if($tag == "li")
-				echo "</li>";//"</label></li>";
-			else
-				echo "</tr>";
-			}
-			if($tag == "li") {
-				echo "</ol><a href=\"attendance.php?course_id=$course_id&amp;lc=".urlencode($lc_email)."\" target=\"_BLANK\">See All LLs/Events</a>";
-				if($is_staff) echo " | ";
-			} else {
-				echo "<tr><th>Total</th>";
-				foreach($events as $event) {
-					echo "<td>";
-					$there = 0;
-					$total = 0;
-					foreach($student_status[$event["id"]] as $status) {
-						if($status === "true" || $status === "false" || $status === "null" || $status === "") {
-							$total += 1;
-							if($status === "true")
-								$there += 1;
-						}
-					}
-					echo "<span data-total=\"$total\" data-there=\"$there\" id=\"percent-{$event["id"]}\" class=\"percent\">" . round($there * 100 / $total) . "</span>%";
-					echo "</td>";
-				}
-				echo "<td></td>";
-				echo "</tr>";
 				echo "</table>";
 			}
+
 			if($is_staff) { ?>
-				<a href="attendance.php?course_id=<?php echo (int) $course_id;?>&download=csv">Download CSV</a>
+				<a href="attendance.php?course_id=<?php echo (int) $course_id;?>&amp;download=csv">Download CSV</a>
 				<?php if($single_event) { ?>
 				|
 				<form class="basic" method="POST">
@@ -1108,11 +1455,41 @@ requireLogin();
 						<input type="hidden" name="send_nags" value="0" />
 						<input type="submit" value="Disable Auto-Nags" />
 					<?php } ?>
-
 				</form>
 				<?php
 				}
 			}
+			?>
+
+			<datalist id="reason_list">
+				<option value="Sick / Dr. Appt" />
+				<option value="Work" />
+				<option value="School" />
+				<option value="Caregiving" />
+				<option value="Bereavement / Family Emergency" />
+				<option value="Transportation" />
+				<option value="Professional Development" />
+				<option value="Vacation" />
+			</datalist>
+			<script>
+				function autocompleteHacks(ele) {
+					if(ele.length < 4)
+						return;
+					var list = document.querySelectorAll("#reason_list option");
+					for(var i = 0; i < list.length; i++) {
+						if(list[i].getAttribute("value") == ele.value) {
+							// it was selected
+							ele.blur();
+							return;
+						}
+					}
+				}
+
+				function showAutocompleteHack(ele) {
+					ele.setAttribute("placeholder", "Click for options...");
+				}
+			</script>
+			<?php
 		}
 		?>
 
@@ -1134,6 +1511,16 @@ requireLogin();
 			<button type="button" onclick="document.getElementById('withdrawn_dialog').style.display = '';">Cancel</button>
 		</form>
 	</div>
-
+</div>
+<?php
+	if(isset($_SESSION["masquerading_user"])) {
+?>
+	<form method="POST">
+		<input type="hidden" name="operation" value="stop_masquerade" />
+		<button type="submit">Stop masquerading as <?php echo htmlentities($_SESSION["masquerading_user"]); ?></button>
+	</form>
+<?php
+	}
+?>
 </body>
 </html>
