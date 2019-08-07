@@ -1038,7 +1038,7 @@ function bz_attendance($atts, $content = null) {
     if($width < 20)
        $width = 100;
 
-    $what = get_the_title();
+    $what = str_replace("&#038;", "&", get_the_title());
     if(isset($atts["event"]))
     	$what = $atts["event"];
 
