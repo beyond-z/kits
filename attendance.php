@@ -728,7 +728,7 @@ requireLogin();
 <head>
 <title>Attendance Tracker</title>
 <style>
-	.main-attendance-view tr th:nth-child(4), .main-attendance-view tr td:nth-child(4) {
+	.main-attendance-view tr th:nth-child(4), .main-attendance-view tr:not(:last-child) td:nth-child(4) {
 		background-color: rgba(226,226,226, 0.3);
 	}
 	.main-attendance-view tr th {
