@@ -56,7 +56,7 @@ SET NAMES utf8mb4;
 
 	CREATE TABLE attendance_courses (
 		id INTEGER PRIMARY KEY, -- should match the canvas id
-		late_threshold VARCHAR(40) DEFAULT '5 mins'
+		late_threshold VARCHAR(40) DEFAULT '15 mins'
 	) DEFAULT CHARACTER SET=utf8mb4;
 
 	CREATE TABLE attendance_people_statuses (
@@ -547,7 +547,7 @@ requireLogin();
 			return $row["late_threshold"];
 		}
 
-		return "5 min";
+		return "15 min";
 	}
 
 	$event_id = 0;
@@ -894,12 +894,6 @@ requireLogin();
 		box-sizing: border-box;
 		width: 100%;
 		font-size:90%;
-	}
-
-	tr.reason-description, 	tr.reason-description td {
-		background-color:white;
-		color: #999;
-		font-style: italic;
 	}
 
 	input[name=reason]:not(:focus) {
@@ -1337,7 +1331,6 @@ requireLogin();
 						}
 						echo "</tr>";
 					}
-					echo "<tr class='reason-description'><td></td><td></td><td></td><td><small>Only use this field if a student reached out to you before missing or being late to a class.</small></td></tr>";
 					echo "</tbody>";
 					echo "</table>";
 
