@@ -896,12 +896,6 @@ requireLogin();
 		font-size:90%;
 	}
 
-	tr.reason-description, 	tr.reason-description td {
-		background-color:white;
-		color: #999;
-		font-style: italic;
-	}
-
 	input[name=reason]:not(:focus) {
 		background: transparent;
 		background-repeat: no-repeat;
@@ -1337,7 +1331,6 @@ requireLogin();
 						}
 						echo "</tr>";
 					}
-					echo "<tr class='reason-description'><td></td><td></td><td></td><td><small>Only use this field if a student reached out to you before missing or being late to a class.</small></td></tr>";
 					echo "</tbody>";
 					echo "</table>";
 
