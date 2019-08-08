@@ -56,7 +56,7 @@ SET NAMES utf8mb4;
 
 	CREATE TABLE attendance_courses (
 		id INTEGER PRIMARY KEY, -- should match the canvas id
-		late_threshold VARCHAR(40) DEFAULT '5 mins'
+		late_threshold VARCHAR(40) DEFAULT '15 mins'
 	) DEFAULT CHARACTER SET=utf8mb4;
 
 	CREATE TABLE attendance_people_statuses (
@@ -547,7 +547,7 @@ requireLogin();
 			return $row["late_threshold"];
 		}
 
-		return "5 min";
+		return "15 min";
 	}
 
 	$event_id = 0;
