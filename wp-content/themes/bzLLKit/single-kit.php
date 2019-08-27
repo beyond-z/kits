@@ -55,7 +55,7 @@ get_header(); ?>
 	// Make sure there's at least the first outcome, then get all three:
 	if (!empty($customfields['bz_kit_outcomes'])){ ?>
 		<div class="kit-component outcomes">
-			<h2><?php echo __('Fellows Will:', 'bz'); ?></h2>
+			<h2><?php echo __('Participants Will:', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_outcomes'][0]);?>
 		</div> <?php
 	}
@@ -344,7 +344,7 @@ get_header(); ?>
 	<?php
 	if (!empty($customfields['bz_kit_after'])){ ?>
 		<div class="kit-component important">
-			<h2><?php echo __('Fellows: After Learning Lab', 'bz'); ?></h2>
+			<h2><?php echo __('Participants: After Learning Lab', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_after'][0]);?>
 		</div> <?php
 	}
