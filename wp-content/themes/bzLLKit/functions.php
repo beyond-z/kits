@@ -633,7 +633,7 @@ function bz_meta_boxes( $meta_boxes ) {
 			),
 			array(
 				'id'   => 'bz_kit_outcomes',
-				'name' => __( 'Fellows Will... (please use bullet list)', 'bz' ),
+				'name' => __( 'Participants Will... (please use bullet list)', 'bz' ),
 				'type' => 'wysiwyg',
 			),
 			array(
