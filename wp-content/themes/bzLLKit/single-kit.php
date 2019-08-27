@@ -55,7 +55,7 @@ get_header(); ?>
 	// Make sure there's at least the first outcome, then get all three:
 	if (!empty($customfields['bz_kit_outcomes'])){ ?>
 		<div class="kit-component outcomes">
-			<h2><?php echo __($customfields['bz_kit_outcomes_header'][0] || 'Fellows Will:', 'bz'); ?></h2>
+			<h2><?php echo __($customfields['bz_kit_outcomes_header'][0] ?? 'Fellows Will:', 'bz'); ?></h2>
 			<?php echo apply_filters('the_content',$customfields['bz_kit_outcomes'][0]);?>
 		</div> <?php
 	}
