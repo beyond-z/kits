@@ -667,6 +667,11 @@ function bz_meta_boxes( $meta_boxes ) {
 				'type' => 'wysiwyg',
 			),
 			array(
+				'id'   => 'bz_kit_prework_header',
+				'name' => __( 'Custom Header to replace "Fellows Pre-work"', 'bz'),
+				'type' => 'text',
+			),
+			array(
 				'id'   => 'bz_kit_lc_how_to_prepare',
 				'name' => __( 'LCs: How to Prepare<ul><li>Please use bullet list.</li></ul>', 'bz' ),
 				'type' => 'wysiwyg',
@@ -682,6 +687,11 @@ function bz_meta_boxes( $meta_boxes ) {
 				'id'   => 'bz_kit_after',
 				'name' => __( 'After Learning Lab (please use bullets; begin with a term in bold, followed by &ldquo;&nbsp;&ndash;&nbsp;&rdquo;', 'bz' ),
 				'type' => 'wysiwyg',
+			),
+			array(
+				'id'   => 'bz_kit_after_header',
+				'name' => __( 'Custom Header to replace "Fellows: After Learning Lab"', 'bz'),
+				'type' => 'text',
 			),
 		)
 	);
