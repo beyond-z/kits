@@ -637,6 +637,11 @@ function bz_meta_boxes( $meta_boxes ) {
 				'type' => 'wysiwyg',
 			),
 			array(
+				'id'   => 'bz_kit_outcomes_header',
+				'name' => __( 'Custom Header to replace "Fellows Will..."', 'bz'),
+				'type' => 'text',
+			),
+			array(
 				'id'   => 'bz_kit_goals',
 				'name' => __( 'Goals', 'bz' ),
 				'type' => 'wysiwyg',
