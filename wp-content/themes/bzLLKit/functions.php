@@ -638,7 +638,7 @@ function bz_meta_boxes( $meta_boxes ) {
 			),
 			array(
 				'id'   => 'bz_kit_outcomes_header',
-				'name' => __( 'Custom Header to replace "Fellows Will..."', 'bz'),
+				'name' => __( 'Use custom header for Outcomes<br/>Default: "Fellows Will..."', 'bz'),
 				'type' => 'text',
 			),
 			array(
@@ -668,7 +668,7 @@ function bz_meta_boxes( $meta_boxes ) {
 			),
 			array(
 				'id'   => 'bz_kit_prework_header',
-				'name' => __( 'Custom Header to replace "Fellows Pre-work"', 'bz'),
+				'name' => __( 'Use custom header for Pre-work</br>Default: "Fellows Pre-work"', 'bz'),
 				'type' => 'text',
 			),
 			array(
@@ -690,7 +690,7 @@ function bz_meta_boxes( $meta_boxes ) {
 			),
 			array(
 				'id'   => 'bz_kit_after_header',
-				'name' => __( 'Custom Header to replace "Fellows: After Learning Lab"', 'bz'),
+				'name' => __( 'Use custom header for After Learning Lab<br/>Default: "Fellows: After Learning Lab"', 'bz'),
 				'type' => 'text',
 			),
 		)
