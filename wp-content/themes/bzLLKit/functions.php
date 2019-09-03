@@ -668,7 +668,7 @@ function bz_meta_boxes( $meta_boxes ) {
 			),
 			array(
 				'id'   => 'bz_kit_prework_header',
-				'name' => __( 'Use custom header for Pre-work</br>Default: "Fellows Pre-work"', 'bz'),
+				'name' => __( 'Use custom header for Pre-work</br>Default: "Fellows\' Prework"', 'bz'),
 				'type' => 'text',
 			),
 			array(
