@@ -4,4 +4,5 @@
 		"run" => 73,
 		"nlu" => 62,
 		"schwab" => 67,
+		"bravenx-pilot" => 81,
 	);
