@@ -1,0 +1,45 @@
+version: '3.5'
+
+services:
+  wordpress-db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: pass
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    networks:
+      - bravendev
+
+  wordpress:
+    build:
+        context: .
+    depends_on:
+      - wordpress-db
+    ports:
+      - "8000:80"
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DEBUG: 1
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html/
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    networks:
+      - bravendev
+      
+# Note all Braven web app docker dev envs use this same network so they can talk to each other.
+# E.g. the hostname joinweb will resolve inside the ssoweb container if they are on the same docker network.
+networks:
+  bravendev:
+    name: braven_dev_network
+
+volumes:
+  db_data:
