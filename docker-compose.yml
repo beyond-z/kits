@@ -1,11 +1,13 @@
 version: '3.5'
 
 services:
-  wordpress-db:
+
+  kitsdb:
     image: mysql:5.7
     volumes:
       - db_data:/var/lib/mysql
-    restart: always
+    # I kind of want to see when it goes down and solve it rather than always just restarting it.
+    #restart: always
     environment:
       MYSQL_ROOT_PASSWORD: pass
       MYSQL_DATABASE: wordpress
@@ -14,20 +16,31 @@ services:
     networks:
       - bravendev
 
-  wordpress:
+  kitsweb:
     build:
         context: .
+    command: /var/www/html/docker-compose/scripts/docker_compose_run.sh apache2-foreground
     depends_on:
-      - wordpress-db
+      - kitsdb
     ports:
-      - "8000:80"
-    restart: always
+      - "3005:80"
+    # I kind of want to see when it goes down and solve it rather than always just restarting it.
+    #restart: always
     environment:
-      WORDPRESS_DB_HOST: db:3306
+      # TODO: create attendance database on here
+      SERVERNAME: kitsweb
+      WORDPRESS_DB_HOST: kitsdb:3306
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_DEBUG: 1
+      WORDPRESS_TABLE_PREFIX: bz_
+      WORDPRESS_FORCE_SSL_ADMIN: 0
+      ATTENDANCE_API_KEY: TODO
+      DB_ATTENDANCE_NAME: braven_attendance
+      CANVAS_TOKEN: TODO
+      BRAVEN_SSO_DOMAIN: ssoweb
+      BRAVEN_PORTAL_DOMAIN: canvasweb
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html/

@@ -1,26 +1,30 @@
 FROM php:7.1-apache
 
+# Required for Docker heroku.yml builds to change it..
+# See: https://devcenter.heroku.com/articles/build-docker-images-heroku-yml#setting-build-time-environment-variables
+ARG SERVERNAME=localhost
+
 # persistent dependencies
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 # Ghostscript is required for rendering PDF previews
 		ghostscript \
+    iputils-ping \
+    net-tools \
+    vim \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
 # install the PHP extensions we need (https://make.wordpress.org/hosting/handbook/handbook/server-environment/#php-extensions)
 RUN set -ex; \
-	\
 	savedAptMark="$(apt-mark showmanual)"; \
-	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		libjpeg-dev \
 		libmagickwand-dev \
 		libpng-dev \
 	; \
-	\
 	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
 	docker-php-ext-install -j "$(nproc)" \
 		bcmath \
@@ -120,6 +124,15 @@ RUN set -ex; \
 	rm wordpress.tar.gz; \
 	chown -R www-data:www-data /usr/src/wordpress
 
-COPY docker-entrypoint.sh /usr/local/bin/
+# This puts a template of the apache2 config in place, but when we actually run the container
+# we need to pass in the ENV vars that it uses to actually make it work. E.g. SERVERNAME
+COPY docker-compose/config/apache2.conf.template /etc/apache2/sites-available/000-default.conf
 
-CMD ["apache2-foreground"]
+# New versions of vim enter visual mode when you use the mouse to highlight things (e.g. to copy / paste). Disable that.
+RUN echo "set mouse-=a" >> ~/.vimrc
+
+# If I change this to bash as the default, does that impact anything? Do I need to run apache2-foreground 
+# from docker_compose_run.sh since thats the entrypoint now for docker-compose.yml? 
+#CMD ["apache2-foreground"]
+CMD ["bash"]
+

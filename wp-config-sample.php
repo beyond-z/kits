@@ -37,6 +37,12 @@ define('DB_CHARSET', 'utf8');
 /** The Database Collate type. Don't change this if in doubt. */
 define('DB_COLLATE', '');
 
+define('ATTENDANCE_API_KEY', 'your key');
+define('CANVAS_TOKEN', 'your token');
+define('BRAVEN_SSO_DOMAIN', 'your sso domain');
+define('BRAVEN_PORTAL_DOMAIN', 'your canvas domain');
+define('DB_ATTENDANCE_NAME', 'your attedance db name');
+
 /**#@+
  * Authentication Unique Keys and Salts.
  *
@@ -63,7 +69,7 @@ define('NONCE_SALT',       'put your unique phrase here');
  * You can have multiple installations in one database if you give each
  * a unique prefix. Only numbers, letters, and underscores please!
  */
-$table_prefix  = 'wp_';
+$table_prefix  = 'bz_';
 
 /**
  * For developers: WordPress debugging mode.
@@ -78,6 +84,11 @@ $table_prefix  = 'wp_';
  * @link https://codex.wordpress.org/Debugging_in_WordPress
  */
 define('WP_DEBUG', false);
+define( 'WP_DEBUG_LOG', false );
+
+/** Only let logging into wp-admin using SSL */
+define('FORCE_SSL_ADMIN', true);
+
 
 /* That's all, stop editing! Happy blogging. */
 

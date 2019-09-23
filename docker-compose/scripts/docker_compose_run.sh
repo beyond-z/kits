@@ -1,4 +1,7 @@
 #!/bin/bash
+
+
+
 set -euo pipefail
 
 # usage: file_env VAR [DEFAULT]
@@ -71,22 +74,28 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		fi
 		tar "${sourceTarArgs[@]}" . | tar "${targetTarArgs[@]}"
 		echo >&2 "Complete! WordPress has been successfully copied to $PWD"
-		if [ ! -e .htaccess ]; then
-			# NOTE: The "Indexes" option is disabled in the php:apache base image
-			cat > .htaccess <<-'EOF'
-				# BEGIN WordPress
-				<IfModule mod_rewrite.c>
-				RewriteEngine On
-				RewriteBase /
-				RewriteRule ^index\.php$ - [L]
-				RewriteCond %{REQUEST_FILENAME} !-f
-				RewriteCond %{REQUEST_FILENAME} !-d
-				RewriteRule . /index.php [L]
-				</IfModule>
-				# END WordPress
-			EOF
-			chown "$user:$group" .htaccess
-		fi
+
+	fi
+
+  # The docker image has a template in place for the apache config, but we need to set
+  # the actual values based on the ENV vars passed in
+  sed -i "s/MYSERVERNAME/$SERVERNAME/g" /etc/apache2/sites-available/000-default.conf
+
+  if [ ! -e .htaccess ]; then
+		# NOTE: The "Indexes" option is disabled in the php:apache base image
+		cat > .htaccess <<-'EOF'
+			# BEGIN WordPress
+			<IfModule mod_rewrite.c>
+			RewriteEngine On
+			RewriteBase /
+			RewriteRule ^index\.php$ - [L]
+			RewriteCond %{REQUEST_FILENAME} !-f
+			RewriteCond %{REQUEST_FILENAME} !-d
+			RewriteRule . /index.php [L]
+			</IfModule>
+			# END WordPress
+		EOF
+		chown "$user:$group" .htaccess
 	fi
 
 	# allow any of these "Authentication Unique Keys and Salts." to be specified via
@@ -111,7 +120,13 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		"${uniqueEnvs[@]/#/WORDPRESS_}"
 		WORDPRESS_TABLE_PREFIX
 		WORDPRESS_DEBUG
+    WORDPRESS_FORCE_SSL_ADMIN
 		WORDPRESS_CONFIG_EXTRA
+    ATTENDANCE_API_KEY
+    CANVAS_TOKEN
+    BRAVEN_SSO_DOMAIN
+    BRAVEN_PORTAL_DOMAIN
+    DB_ATTENDANCE_NAME
 	)
 	haveConfig=
 	for e in "${envs[@]}"; do
@@ -134,7 +149,8 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		: "${WORDPRESS_DB_NAME:=${MYSQL_ENV_MYSQL_DATABASE:-}}"
 	fi
 
-	# only touch "wp-config.php" if we have environment-supplied configuration values
+  echo "### Setting up wp-config.php if ENV vars supplied. ENV vars supplied == $haveConfig"
+  # only touch "wp-config.php" if we have environment-supplied configuration values
 	if [ "$haveConfig" ]; then
 		: "${WORDPRESS_DB_HOST:=mysql}"
 		: "${WORDPRESS_DB_USER:=root}"
@@ -204,12 +220,18 @@ EOPHP
 			sed -ri -e "s/($start\s*).*($end)$/\1$(sed_escape_rhs "$(php_escape "$value" "$var_type")")\3/" wp-config.php
 		}
 
+    echo "### Injecting ENV var supplied values into wp-config.php"
 		set_config 'DB_HOST' "$WORDPRESS_DB_HOST"
 		set_config 'DB_USER' "$WORDPRESS_DB_USER"
 		set_config 'DB_PASSWORD' "$WORDPRESS_DB_PASSWORD"
 		set_config 'DB_NAME' "$WORDPRESS_DB_NAME"
 		set_config 'DB_CHARSET' "$WORDPRESS_DB_CHARSET"
 		set_config 'DB_COLLATE' "$WORDPRESS_DB_COLLATE"
+		set_config 'ATTENDANCE_API_KEY' "$ATTENDANCE_API_KEY"
+		set_config 'CANVAS_TOKEN' "$CANVAS_TOKEN"
+		set_config 'BRAVEN_SSO_DOMAIN' "$BRAVEN_SSO_DOMAIN"
+		set_config 'BRAVEN_PORTAL_DOMAIN' "$BRAVEN_PORTAL_DOMAIN"
+		set_config 'DB_ATTENDANCE_NAME' "$DB_ATTENDANCE_NAME"
 
 		for unique in "${uniqueEnvs[@]}"; do
 			uniqVar="WORDPRESS_$unique"
@@ -230,6 +252,11 @@ EOPHP
 
 		if [ "$WORDPRESS_DEBUG" ]; then
 			set_config 'WP_DEBUG' 1 boolean
+			set_config 'WP_DEBUG_LOG' 1 boolean
+		fi
+
+		if [ "$WORDPRESS_FORCE_SSL_ADMIN" ]; then
+			set_config 'FORCE_SSL_ADMIN' "$WORDPRESS_FORCE_SSL_ADMIN" boolean
 		fi
 
 		if ! TERM=dumb php -- <<'EOPHP'
@@ -282,9 +309,11 @@ EOPHP
 	fi
 
 	# now that we're definitely done writing configuration, let's clear out the relevant envrionment variables (so that stray "phpinfo()" calls don't leak secrets from our code)
+  echo "### Unsetting sensitive ENV vars now that we're done writing wp-config.php"
 	for e in "${envs[@]}"; do
 		unset "$e"
 	done
+
 fi
 
 exec "$@"
