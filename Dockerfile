@@ -32,6 +32,8 @@ RUN set -ex; \
 		gd \
 		mysqli \
 		opcache \
+    pdo \
+    pdo_mysql \
 		zip \
 	; \
 	pecl install imagick-3.4.4; \
@@ -130,6 +132,9 @@ COPY docker-compose/config/apache2.conf.template /etc/apache2/sites-available/00
 
 # New versions of vim enter visual mode when you use the mouse to highlight things (e.g. to copy / paste). Disable that.
 RUN echo "set mouse-=a" >> ~/.vimrc
+
+# BTODO: setup the cronjob to populate the attendance data for the attendance API. See "crontab -u www-data -e"
+# in the Kits Production Setup doc.
 
 # If I change this to bash as the default, does that impact anything? Do I need to run apache2-foreground 
 # from docker_compose_run.sh since thats the entrypoint now for docker-compose.yml? 
