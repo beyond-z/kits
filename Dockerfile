@@ -1,4 +1,5 @@
-FROM php:7.1-apache
+# This matches the staging and prod env.
+FROM php:7.0.8-apache
 
 # Required for Docker heroku.yml builds to change it..
 # See: https://devcenter.heroku.com/articles/build-docker-images-heroku-yml#setting-build-time-environment-variables
@@ -114,7 +115,13 @@ RUN { \
     echo "xdebug.remote_autostart=off"; \
 	} > /usr/local/etc/php/conf.d/xdebug.ini
 
-  
+# This is set by default on the Ubuntu DigitalOcean install which was letting the
+# Authorizor plugin work properly with a bug it has. Without this on, I ran into this issue:
+# https://wordpress.org/support/topic/warning-cannot-modify-header-information-headers-already-sent-18/
+RUN { \
+		echo 'output_buffering=4096'; \
+	} > /usr/local/etc/php/conf.d/php.ini
+
 ENV WORDPRESS_VERSION 5.2.3
 ENV WORDPRESS_SHA1 5efd37148788f3b14b295b2a9bf48a1a467aa303
 
