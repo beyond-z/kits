@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 set -euo pipefail
 
 # usage: file_env VAR [DEFAULT]
@@ -114,6 +112,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		WORDPRESS_DB_HOST
 		WORDPRESS_DB_USER
 		WORDPRESS_DB_PASSWORD
+    MYSQL_ROOT_PASSWORD
 		WORDPRESS_DB_NAME
 		WORDPRESS_DB_CHARSET
 		WORDPRESS_DB_COLLATE
@@ -264,6 +263,7 @@ EOPHP
 // database might not exist, so let's try creating it (just to be safe)
 
 $stderr = fopen('php://stderr', 'w');
+fwrite($stderr, "\n### Attempting to create the Wordpress and Attendance databases if they don't exist");
 
 // https://codex.wordpress.org/Editing_wp-config.php#MySQL_Alternate_Port
 //   "hostname:port"
@@ -275,9 +275,16 @@ if (is_numeric($socket)) {
 	$port = (int) $socket;
 	$socket = null;
 }
-$user = getenv('WORDPRESS_DB_USER');
-$pass = getenv('WORDPRESS_DB_PASSWORD');
+// Have to do this as root b/c the wordpress user is only setup with privileges on the wordpress database
+// by default using the docker image and we need to create the attendance DB too.
+$user = 'root';
+$wordpressUser = getenv('WORDPRESS_DB_USER');
+$pass = getenv('MYSQL_ROOT_PASSWORD');
 $dbName = getenv('WORDPRESS_DB_NAME');
+$attendanceDbName = getenv('DB_ATTENDANCE_NAME');
+
+// Uncomment to troubleshoot connectiong issues
+//fwrite($stderr, "\n### mysql connection command: mysql -h " . $host . " -P " . $port . " -u " . $user . " -p" . $pass . "\n");
 
 $maxTries = 10;
 do {
@@ -292,7 +299,27 @@ do {
 	}
 } while ($mysql->connect_error);
 
+fwrite($stderr, "\nConnected to database! Granting privileges to users and creating databases (if they dont exist).\n");
+
+if (!$mysql->query('GRANT ALL PRIVILEGES ON `' . $mysql->real_escape_string($dbName) . '`.* TO \'' . $mysql->real_escape_string($wordpressUser) . '\'@\'%\'')) {
+	fwrite($stderr, "\n" . 'MySQL "GRANT ALL PRIVILEGES" Error: ' . $mysql->error . "\n");
+	$mysql->close();
+	exit(1);
+}
+
 if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string($dbName) . '`')) {
+	fwrite($stderr, "\n" . 'MySQL "CREATE DATABASE" Error: ' . $mysql->error . "\n");
+	$mysql->close();
+	exit(1);
+}
+
+if (!$mysql->query('GRANT ALL PRIVILEGES ON `' . $mysql->real_escape_string($attendanceDbName) . '`.* TO \'' . $mysql->real_escape_string($wordpressUser) . '\'@\'%\'')) {
+	fwrite($stderr, "\n" . 'MySQL "GRANT ALL PRIVILEGES" Error: ' . $mysql->error . "\n");
+	$mysql->close();
+	exit(1);
+}
+
+if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string($attendanceDbName) . '`')) {
 	fwrite($stderr, "\n" . 'MySQL "CREATE DATABASE" Error: ' . $mysql->error . "\n");
 	$mysql->close();
 	exit(1);

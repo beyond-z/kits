@@ -1,2 +1,8 @@
+# For files generated at runtime or with sensitive information that shouldn't
+# be built into the actual container image, ignore them here. Note that for mounted
+# volumes, at runtime these have no impact and will end up in the container. This is
+# only for buildtime files to be ignored so we can have a clean docker image.
 docker-compose.yml
 uploads.ini
+.htaccess
+wp-config.php

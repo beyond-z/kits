@@ -10,6 +10,8 @@ services:
     #restart: always
     environment:
       MYSQL_ROOT_PASSWORD: pass
+      # Note that the mysql image automatically creates the database and user using the ENV vars below.
+      # See: https://hub.docker.com/_/mysql
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
@@ -27,12 +29,12 @@ services:
     # I kind of want to see when it goes down and solve it rather than always just restarting it.
     #restart: always
     environment:
-      # TODO: create attendance database on here
       SERVERNAME: kitsweb
       WORDPRESS_DB_HOST: kitsdb:3306
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: pass
       WORDPRESS_DEBUG: 1
       WORDPRESS_TABLE_PREFIX: bz_
       WORDPRESS_FORCE_SSL_ADMIN: 0
@@ -44,7 +46,6 @@ services:
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html/
-      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
     networks:
       - bravendev
       
