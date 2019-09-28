@@ -325,6 +325,7 @@ function bz_current_full_url() {
 function sso() {
 	global $WP_CONFIG;
 
+
 	if(isset($_SESSION["sso_service"]) && isset($_SESSION["coming_from"]) && isset($_GET["ticket"])) {
 		// validate ticket from the SSO server
 
@@ -334,7 +335,8 @@ function sso() {
 		unset($_SESSION["sso_service"]);
 		unset($_SESSION["coming_from"]);
 
-		$content = file_get_contents("https://{$WP_CONFIG["BRAVEN_SSO_DOMAIN"]}/serviceValidate?ticket=".urlencode($ticket)."&service=".urlencode($service));
+    $baseUrl = getSSOBaseUrl();
+		$content = file_get_contents("{$baseUrl}/serviceValidate?ticket=".urlencode($ticket)."&service=".urlencode($service));
 
 		$xml = new DOMDocument();
 		$xml->loadXML($content);
@@ -349,7 +351,8 @@ function sso() {
 	} else if(isset($_SESSION["coming_from"]) && !isset($_SESSION["sso_service"])) {
 		$ssoService = bz_current_full_url() . "&dosso";
 		$_SESSION["sso_service"] = $ssoService;
-		header("Location: https://{$WP_CONFIG["BRAVEN_SSO_DOMAIN"]}/login?service=" . urlencode($ssoService));
+    $baseUrl = getSSOBaseUrl();
+		header("Location: {$baseUrl}/login?service=" . urlencode($ssoService));
 		exit;
 	} // otherwise it is just an api thing for other uses
 }
@@ -416,7 +419,8 @@ requireLogin();
 		global $braven_courses;
 
 		$ch = curl_init();
-		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/bz/courses_for_email?email='.(urlencode($email)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+    $baseUrl = getPortalBaseUrl();
+		$url = $baseUrl . '/bz/courses_for_email?email='.(urlencode($email)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
 		// Change stagingportal to portal here when going live!
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);

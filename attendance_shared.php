@@ -50,7 +50,8 @@ function get_canvas_events($course_id, $start_date, $end_date) {
 		$additional .= "&end_date=".urlencode($end_date);
 
 	$ch = curl_init();
-	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?per_page=500&context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]) . $additional;
+  $baseUrl = getPortalBaseUrl();
+  $url = $baseUrl . '/api/v1/calendar_events?per_page=500&context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]) . $additional;
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$answer = curl_exec($ch);
@@ -118,6 +119,23 @@ function populate_times_from_canvas($course_id) {
 	}
 }
 
+function getProtocol(){
+   $protocol = "http";
+  if(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on")
+    $protocol .= "s";
+  return $protocol .= "//";
+}
+
+function getPortalBaseUrl() {
+  $protocol = getProtocol();
+	return $protocol . $WP_CONFIG["BRAVEN_PORTAL_DOMAIN"];
+}
+
+function getSSOBaseUrl() {
+  $protocol = getProtocol();
+	return $protocol . $WP_CONFIG["BRAVEN_SSO_DOMAIN"];
+}
+
 function isTa($user_email, $cohort_info) {
 	return in_array(strtolower($user_email), $cohort_info["tas"]);
 }
@@ -129,12 +147,16 @@ function get_cohorts_info($course_id) {
 		return $_SESSION["cohort_course_info_$course_id"];
 
 	$ch = curl_init();
-	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/bz/course_cohort_information?course_ids[]='.((int) $course_id). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+  $baseUrl = getPortalBaseUrl();
+	$url = $baseUrl . '/bz/course_cohort_information?course_ids[]='.((int) $course_id). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+
+  //echo("<script>console.log('PHP: calling: " . $url . "');</script>");
 
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$answer = curl_exec($ch);
 	curl_close($ch);
+
 
 	// trim off any cross-site get padding, if present,
 	// keeping just the json object

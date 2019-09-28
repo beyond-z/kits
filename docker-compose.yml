@@ -40,9 +40,9 @@ services:
       WORDPRESS_FORCE_SSL_ADMIN: 0
       ATTENDANCE_API_KEY: TODO
       DB_ATTENDANCE_NAME: braven_attendance
-      CANVAS_TOKEN: TODO
-      BRAVEN_SSO_DOMAIN: ssoweb
-      BRAVEN_PORTAL_DOMAIN: canvasweb
+      CANVAS_TOKEN: fG5BLbfZCiheKv6LJO13t1opFuTseKNAY6no6b7meHicN8UWsYAjaPU5TQFyB1TP
+      BRAVEN_SSO_DOMAIN: ssoweb:3002
+      BRAVEN_PORTAL_DOMAIN: canvasweb:3000
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html/
