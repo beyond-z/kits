@@ -126,6 +126,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
     BRAVEN_SSO_DOMAIN
     BRAVEN_PORTAL_DOMAIN
     DB_ATTENDANCE_NAME
+    ATTENDANCE_TRACKER_NOTIFY_METHOD
 	)
 	haveConfig=
 	for e in "${envs[@]}"; do
@@ -231,6 +232,7 @@ EOPHP
 		set_config 'BRAVEN_SSO_DOMAIN' "$BRAVEN_SSO_DOMAIN"
 		set_config 'BRAVEN_PORTAL_DOMAIN' "$BRAVEN_PORTAL_DOMAIN"
 		set_config 'DB_ATTENDANCE_NAME' "$DB_ATTENDANCE_NAME"
+		set_config 'ATTENDANCE_TRACKER_NOTIFY_METHOD' "$ATTENDANCE_TRACKER_NOTIFY_METHOD"
 
 		for unique in "${uniqueEnvs[@]}"; do
 			uniqVar="WORDPRESS_$unique"

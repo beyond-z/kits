@@ -38,8 +38,16 @@ services:
       WORDPRESS_DEBUG: 1
       WORDPRESS_TABLE_PREFIX: bz_
       WORDPRESS_FORCE_SSL_ADMIN: 0
-      ATTENDANCE_API_KEY: TODO
       DB_ATTENDANCE_NAME: braven_attendance
+      # The other value is "sms", but be careful. Then actual text messages would go out to remind LCs to take attendance!
+      ATTENDANCE_TRACKER_NOTIFY_METHOD: echo
+      # This is if a web app wants to call in to update the attendance in the Canvas gradebook. I think
+      # maybe this was called from the Content Editor?!? Either way, the way this functionality is currently
+      # working is that a cronjob is setup on staging and prod to run the attendance_api.php file occasionally
+      # and push attendance data to Canvas.
+      # In the dev env, we prob want a script or a task to manually force it to happen if we want to test/develop
+      # that feature.
+      ATTENDANCE_API_KEY: devattendanceapikey
       CANVAS_TOKEN: fG5BLbfZCiheKv6LJO13t1opFuTseKNAY6no6b7meHicN8UWsYAjaPU5TQFyB1TP
       BRAVEN_SSO_DOMAIN: ssoweb:3002
       BRAVEN_PORTAL_DOMAIN: canvasweb:3000
