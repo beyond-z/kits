@@ -120,18 +120,20 @@ function populate_times_from_canvas($course_id) {
 }
 
 function getProtocol(){
-   $protocol = "http";
+  $protocol = "http";
   if(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on")
     $protocol .= "s";
-  return $protocol .= "//";
+  return $protocol .= "://";
 }
 
 function getPortalBaseUrl() {
+  global $WP_CONFIG;
   $protocol = getProtocol();
 	return $protocol . $WP_CONFIG["BRAVEN_PORTAL_DOMAIN"];
 }
 
 function getSSOBaseUrl() {
+  global $WP_CONFIG;
   $protocol = getProtocol();
 	return $protocol . $WP_CONFIG["BRAVEN_SSO_DOMAIN"];
 }
