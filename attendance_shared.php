@@ -152,7 +152,9 @@ function get_cohorts_info($course_id) {
   $baseUrl = getPortalBaseUrl();
 	$url = $baseUrl . '/bz/course_cohort_information?course_ids[]='.((int) $course_id). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
 
-  //echo("<script>console.log('PHP: calling: " . $url . "');</script>");
+  // Uncomment to log above call to browswer console so you can login to server and try to curl it to see what you get.
+  // Note: curl has to be run like: curl --globoff -vvv "http://canvasweb:3000/bz/course_cohort_information?course_ids[]=71&access_token=<yourtoken>"
+  echo("<script>console.log('Attendance tracker calling the following to get attendance cohort info from Canvas: " . $url . "');</script>");
 
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);

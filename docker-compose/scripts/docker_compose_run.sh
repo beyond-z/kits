@@ -78,6 +78,8 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
   # The docker image has a template in place for the apache config, but we need to set
   # the actual values based on the ENV vars passed in
   sed -i "s/MYSERVERNAME/$SERVERNAME/g" /etc/apache2/sites-available/000-default.conf
+  sed -i "s/MYSERVERPORT/$SERVERPORT/g" /etc/apache2/sites-available/000-default.conf
+  sed -i "s/80/$SERVERPORT/g" /etc/apache2/ports.conf
 
   if [ ! -e .htaccess ]; then
 		# NOTE: The "Indexes" option is disabled in the php:apache base image

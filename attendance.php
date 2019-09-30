@@ -421,6 +421,10 @@ requireLogin();
 		$ch = curl_init();
     $baseUrl = getPortalBaseUrl();
 		$url = $baseUrl . '/bz/courses_for_email?email='.(urlencode($email)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+
+    // Uncomment to log above call to browswer console so you can login to server and try to curl it to see what you get.
+    //echo("<script>console.log('Attendance tracker getting course ID for user by calling: " . $url . "');</script>");
+
 		// Change stagingportal to portal here when going live!
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);

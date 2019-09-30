@@ -4,6 +4,7 @@ FROM php:7.0.8-apache
 # Required for Docker heroku.yml builds to change it..
 # See: https://devcenter.heroku.com/articles/build-docker-images-heroku-yml#setting-build-time-environment-variables
 ARG SERVERNAME=localhost
+ARG SERVERPORT=80
 
 # persistent dependencies
 RUN set -eux; \
