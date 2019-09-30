@@ -41,7 +41,8 @@ if(php_sapi_name() == 'cli') {
 		global $WP_CONFIG;
 
 		$ch = curl_init();
-		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/courses/'.$course_id.'/custom_gradebook_columns/'.$column_number.'/data/'.$uid;
+    $baseUrl = getPortalBaseUrl();
+    $url = $baseUrl . '/api/v1/courses/'.$course_id.'/custom_gradebook_columns/'.$column_number.'/data/'.$uid;
 
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
 
@@ -59,7 +60,8 @@ if(php_sapi_name() == 'cli') {
 		global $WP_CONFIG;
 
 		$ch = curl_init();
-		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/courses/'.$course_id.'/custom_gradebook_columns?access_token='.urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+    $baseUrl = getPortalBaseUrl();
+    $url = $baseUrl . '/api/v1/courses/'.$course_id.'/custom_gradebook_columns?access_token='.urlencode($WP_CONFIG["CANVAS_TOKEN"]);
 
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -75,7 +77,8 @@ if(php_sapi_name() == 'cli') {
 		// not there, create a column
 
 		$ch = curl_init();
-		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/courses/'.$course_id.'/custom_gradebook_columns';
+    $baseUrl = getPortalBaseUrl();
+    $url = $baseUrl . '/api/v1/courses/'.$course_id.'/custom_gradebook_columns';
 
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_POST, 1);

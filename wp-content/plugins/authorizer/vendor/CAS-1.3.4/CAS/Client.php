@@ -314,10 +314,18 @@ class CAS_Client
     {
         // the URL is build only when needed
         if ( empty($this->_server['base_url']) ) {
-            $this->_server['base_url'] = 'https://' . $this->_getServerHostname();
-            if ($this->_getServerPort()!=443) {
-                $this->_server['base_url'] .= ':'
-                .$this->_getServerPort();
+            // Sooo, to get this plugin working in a dev env, I had to change this method
+            // It now defaults to http instead of https unless you set port 443 or leave it blank.
+            // When we upgrade, we're going to have to deal with merge conflicts and make this
+            // change in the upgraded code. TODO: figure out a way to make this change outside
+            // the plugin code so that it works on upgrades!
+            // NOTE: I tried to use protocol relative URLs, like '//' . $this->_getServerHostname(); but
+            // this stuff uses cUrl under the covers and cUrl can't handle those b/c it's protocol agnostic
+            if ($this->_getServerPort()==443 || empty( $this->_getServerPort() ) ) {
+                $this->_server['base_url'] = 'https://' . $this->_getServerHostname();
+            }
+            else {
+                $this->_server['base_url'] = 'http://' . $this->_getServerHostname() . ':' . $this->_getServerPort();
             }
             $this->_server['base_url'] .= $this->_getServerURI();
         }
