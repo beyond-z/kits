@@ -323,9 +323,6 @@ function bz_current_full_url() {
 }
 
 function sso() {
-	global $WP_CONFIG;
-
-
 	if(isset($_SESSION["sso_service"]) && isset($_SESSION["coming_from"]) && isset($_GET["ticket"])) {
 		// validate ticket from the SSO server
 
@@ -415,12 +412,11 @@ requireLogin();
 	}
 
 	function get_user_course_id($email) {
-		global $WP_CONFIG;
 		global $braven_courses;
 
 		$ch = curl_init();
     $baseUrl = getPortalBaseUrl();
-		$url = $baseUrl . '/bz/courses_for_email?email='.(urlencode($email)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+		$url = $baseUrl . '/bz/courses_for_email?email='.(urlencode($email)). '&access_token=' . urlencode(CANVAS_TOKEN);
 
     // Uncomment to log above call to browswer console so you can login to server and try to curl it to see what you get.
     //echo("<script>console.log('Attendance tracker getting course ID for user by calling: " . $url . "');</script>");
