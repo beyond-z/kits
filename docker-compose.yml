@@ -1,0 +1,68 @@
+version: '3.5'
+
+services:
+
+  kitsdb:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    # I kind of want to see when it goes down and solve it rather than always just restarting it.
+    #restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: pass
+      # Note that the mysql image automatically creates the database and user using the ENV vars below.
+      # See: https://hub.docker.com/_/mysql
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    networks:
+      - bravendev
+
+  kitsweb:
+    build:
+        context: .
+    command: /var/www/html/docker-compose/scripts/docker_compose_run.sh apache2-foreground
+    depends_on:
+      - kitsdb
+    ports:
+      - "3005:3005"
+    # I kind of want to see when it goes down and solve it rather than always just restarting it.
+    #restart: always
+    environment:
+      SERVERNAME: kitsweb
+      SERVERPORT: 3005
+      WORDPRESS_DB_HOST: kitsdb:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: pass
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_TABLE_PREFIX: bz_
+      WORDPRESS_FORCE_SSL_ADMIN: 0
+      DB_ATTENDANCE_NAME: braven_attendance
+      # The other value is "sms", but be careful. Then actual text messages would go out to remind LCs to take attendance!
+      ATTENDANCE_TRACKER_NOTIFY_METHOD: echo
+      # This is if a web app wants to call in to update the attendance in the Canvas gradebook. I think
+      # maybe this was called from the Content Editor?!? Either way, the way this functionality is currently
+      # working is that a cronjob is setup on staging and prod to run the attendance_api.php file occasionally
+      # and push attendance data to Canvas.
+      # In the dev env, we prob want a script or a task to manually force it to happen if we want to test/develop
+      # that feature.
+      ATTENDANCE_API_KEY: devattendanceapikey
+      CANVAS_TOKEN: BEW8ldtbMypKZiCs8EmW2eQXfOoBpfOEwNJXwyvfIKZIpMgQzBfYUugc4V20oFgt
+      BRAVEN_SSO_DOMAIN: ssoweb:3002
+      BRAVEN_PORTAL_DOMAIN: canvasweb:3000
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html/
+    networks:
+      - bravendev
+      
+# Note all Braven web app docker dev envs use this same network so they can talk to each other.
+# E.g. the hostname joinweb will resolve inside the ssoweb container if they are on the same docker network.
+networks:
+  bravendev:
+    name: braven_dev_network
+
+volumes:
+  db_data:

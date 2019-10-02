@@ -87,8 +87,6 @@ function load_attendance_result($course_id, $event_name, $students_info) {
 }
 
 function send_sms($to, $message) {
-	global $WP_CONFIG;
-
 	$to = preg_replace('/[^0-9]/', '', $to);
 	if(strlen($to) == 10)
 		$to = "1" . $to;
@@ -98,10 +96,10 @@ function send_sms($to, $message) {
 		throw new Exception("bad phone number $to");
 
 	$ch = curl_init();
-	$url = "https://api.twilio.com/2010-04-01/Accounts/".$WP_CONFIG["TWILIO_SID"]."/Messages.json";
-	$auth = $WP_CONFIG["TWILIO_SID"] . ":" . $WP_CONFIG["TWILIO_TOKEN"];
+	$url = "https://api.twilio.com/2010-04-01/Accounts/".TWILIO_SID."/Messages.json";
+	$auth = TWILIO_SID . ":" . TWILIO_TOKEN;
 
-	$post  = "From=".urlencode($WP_CONFIG['TWILIO_FROM'])."&";
+	$post  = "From=".urlencode(TWILIO_FROM)."&";
 	$post .= "To=".urlencode($to)."&";
 	$post .= "Body=".urlencode($message);
 
@@ -207,5 +205,5 @@ echo "*****\nRunning at " . date('r') . "\n";
 
 foreach($braven_courses as $name => $course_id) {
 	echo "Checking course $course_id\n";
-	check_attendance_from_canvas($course_id, $WP_CONFIG["ATTENDANCE_TRACKER_NOTIFY_METHOD"]);
+	check_attendance_from_canvas($course_id, ATTENDANCE_TRACKER_NOTIFY_METHOD);
 }

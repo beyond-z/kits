@@ -38,16 +38,15 @@ if(php_sapi_name() == 'cli') {
 	echo "*****\nRunning at " . date('r') . "\n";
 
 	function set_canvas_attendance_info($course_id, $column_number, $uid, $text) {
-		global $WP_CONFIG;
-
 		$ch = curl_init();
-		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/courses/'.$course_id.'/custom_gradebook_columns/'.$column_number.'/data/'.$uid;
+    $baseUrl = getPortalBaseUrl();
+    $url = $baseUrl . '/api/v1/courses/'.$course_id.'/custom_gradebook_columns/'.$column_number.'/data/'.$uid;
 
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
 
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, urlencode("column_data[content]")."=".urlencode($text) . '&access_token='.urlencode($WP_CONFIG["CANVAS_TOKEN"]));
+		curl_setopt($ch, CURLOPT_POSTFIELDS, urlencode("column_data[content]")."=".urlencode($text) . '&access_token='.urlencode(CANVAS_TOKEN));
 		$answer = curl_exec($ch);
 		curl_close($ch);
 	}
@@ -55,11 +54,9 @@ if(php_sapi_name() == 'cli') {
 	function get_canvas_attendance_column_id($course_id) {
 		// first, try to get an existing one called Attendance and return ID
 		// and if it isn't there, go ahead and create one and return the ID
-
-		global $WP_CONFIG;
-
 		$ch = curl_init();
-		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/courses/'.$course_id.'/custom_gradebook_columns?access_token='.urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+    $baseUrl = getPortalBaseUrl();
+    $url = $baseUrl . '/api/v1/courses/'.$course_id.'/custom_gradebook_columns?access_token='.urlencode(CANVAS_TOKEN);
 
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -75,7 +72,8 @@ if(php_sapi_name() == 'cli') {
 		// not there, create a column
 
 		$ch = curl_init();
-		$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/courses/'.$course_id.'/custom_gradebook_columns';
+    $baseUrl = getPortalBaseUrl();
+    $url = $baseUrl . '/api/v1/courses/'.$course_id.'/custom_gradebook_columns';
 
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_POST, 1);
@@ -83,7 +81,7 @@ if(php_sapi_name() == 'cli') {
 		curl_setopt($ch, CURLOPT_POSTFIELDS,
 			urlencode("column[title]")."=Attendance" .
 			'&'.urlencode("column[read_only]")."=true" .
-			'&access_token='.urlencode($WP_CONFIG["CANVAS_TOKEN"]));
+			'&access_token='.urlencode(CANVAS_TOKEN));
 		$answer = curl_exec($ch);
 		curl_close($ch);
 
@@ -97,6 +95,11 @@ if(php_sapi_name() == 'cli') {
 		$column_number = get_canvas_attendance_column_id($course_id);
 		$result = get_attendance_api_result($course_id, $cohort_info["students"]);
 
+    // TODO: this is brutally slow since it loops over all students in all active courses and updates the value through the API one at a time.
+    // Either figure out how to set the values in bulk or maybe check timestamps of last time 
+    // data was sent (or query canvas for last time value was updated on the canvas end)
+    // vs last time attendance status was updated and only send new ones.
+    // Or maybe just pull all attendance data from canvas in one go per course, then only send updates for changed values.
 		foreach($result["statuses"] as $uid => $status) {
 			set_canvas_attendance_info($course_id, $column_number, $uid, $status["total_present"] . "/". $status["total_events"]);
 		}
@@ -104,7 +107,7 @@ if(php_sapi_name() == 'cli') {
 } else {
 	// if calling via web, we do an access token chck
 
-	if(!isset($_REQUEST["access_token"]) || $_REQUEST["access_token"] != $WP_CONFIG["ATTENDANCE_API_KEY"]) {
+	if(!isset($_REQUEST["access_token"]) || $_REQUEST["access_token"] != ATTENDANCE_API_KEY) {
 		die("Unauthorized");
 	}
 

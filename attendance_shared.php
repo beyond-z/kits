@@ -1,19 +1,5 @@
 <?php
-$WP_CONFIG = array();
-
-function bzLoadWpConfig() {
-	global $WP_CONFIG;
-
-	$out = array();
-	preg_match_all("/define\('([A-Z_0-9]+)', '(.*)'\);/", file_get_contents("wp-config.php"), $out, PREG_SET_ORDER);
-
-	foreach($out as $match) {
-		$WP_CONFIG[$match[1]] = $match[2];
-	}
-}
-
-bzLoadWpConfig();
-
+require_once("wp-config.php");
 require_once("courses.php");
 
 function get_lc_excused_status($event_id, $lc_email) {
@@ -41,8 +27,6 @@ function get_lc_excused_status($event_id, $lc_email) {
 
 
 function get_canvas_events($course_id, $start_date, $end_date) {
-	global $WP_CONFIG;
-
 	$additional = "";
 	if($start_date !== null)
 		$additional .= "&start_date=".urlencode($start_date);
@@ -50,7 +34,8 @@ function get_canvas_events($course_id, $start_date, $end_date) {
 		$additional .= "&end_date=".urlencode($end_date);
 
 	$ch = curl_init();
-	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/api/v1/calendar_events?per_page=500&context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]) . $additional;
+  $baseUrl = getPortalBaseUrl();
+  $url = $baseUrl . '/api/v1/calendar_events?per_page=500&context_codes[]=course_'.(urlencode($course_id)). '&access_token=' . urlencode(CANVAS_TOKEN) . $additional;
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$answer = curl_exec($ch);
@@ -118,23 +103,62 @@ function populate_times_from_canvas($course_id) {
 	}
 }
 
+// Note: originally the check for which protocol to use was the following:
+//   if(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on")
+// but that didn't work when this script was run from the command line as a
+// cronjob in order to push attendance data to the portal (canvas).
+// So we need to check wp-config.php instead
+function getProtocol(){
+  static $protocol;
+  if (is_null($protocol)){
+    // I know, this config value isn't exactly what we should use, but rather than
+    // defining a new config, if we're running SSL, we should require this to be set.
+    if (FORCE_SSL_ADMIN){
+      $protocol = "https://";
+    } else {
+      $protocol = "http://";
+    }
+  }
+  return $protocol;
+}
+
+function getPortalBaseUrl() {
+  static $portalBaseUrl;
+  if (is_null($portalBaseUrl)){
+    $portalBaseUrl = getProtocol() . BRAVEN_PORTAL_DOMAIN;
+  }
+  return $portalBaseUrl;
+}
+
+function getSSOBaseUrl() {
+  static $ssoBaseUrl;
+  if (is_null($ssoBaseUrl)){
+    $ssoBaseUrl = getProtocol() . BRAVEN_SSO_DOMAIN;
+  }
+  return $ssoBaseUrl;
+}
+
 function isTa($user_email, $cohort_info) {
 	return in_array(strtolower($user_email), $cohort_info["tas"]);
 }
 
 function get_cohorts_info($course_id) {
-	global $WP_CONFIG;
-
 	if(isset($_SESSION["cohort_course_info_$course_id"]))
 		return $_SESSION["cohort_course_info_$course_id"];
 
 	$ch = curl_init();
-	$url = 'https://'.$WP_CONFIG["BRAVEN_PORTAL_DOMAIN"].'/bz/course_cohort_information?course_ids[]='.((int) $course_id). '&access_token=' . urlencode($WP_CONFIG["CANVAS_TOKEN"]);
+  $baseUrl = getPortalBaseUrl();
+	$url = $baseUrl . '/bz/course_cohort_information?course_ids[]='.((int) $course_id). '&access_token=' . urlencode(CANVAS_TOKEN);
+
+  // Uncomment to log above call to browswer console so you can login to server and try to curl it to see what you get.
+  // Note: curl has to be run like: curl --globoff -vvv "http://canvasweb:3000/bz/course_cohort_information?course_ids[]=71&access_token=<yourtoken>"
+  //echo("<script>console.log('Attendance tracker calling the following to get attendance cohort info from Canvas: " . $url . "');</script>");
 
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$answer = curl_exec($ch);
 	curl_close($ch);
+
 
 	// trim off any cross-site get padding, if present,
 	// keeping just the json object
@@ -315,5 +339,5 @@ $pdo_opt = [
 	PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
-$pdo = new PDO("mysql:host={$WP_CONFIG["DB_HOST"]};dbname={$WP_CONFIG["DB_ATTENDANCE_NAME"]};charset=utf8mb4", $WP_CONFIG["DB_USER"], $WP_CONFIG["DB_PASSWORD"], $pdo_opt);
+$pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_ATTENDANCE_NAME . ";charset=utf8mb4", DB_USER, DB_PASSWORD, $pdo_opt);
 
