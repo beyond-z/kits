@@ -1058,6 +1058,8 @@ function bz_attendance($atts, $content = null) {
     	$what = $atts["event"];
 
     return "<iframe onload=\"
+        // fall back to a minimum height because the iframe document height trick doesn't work in IE
+        this.style.minHeight = '500px';
         this.style.height = (30 + this.contentWindow.document.body.scrollHeight) + 'px';
         this.style.border = 'none';
         this.style.width = '".$width."%';
@@ -1067,6 +1069,8 @@ function bz_attendance($atts, $content = null) {
         try {
                 (function(ele) {
                 var i = new IntersectionObserver(function(entries) {
+                        // fall back to a minimum height because the iframe document height trick doesn't work in IE
+                        ele.style.minHeight = '500px';
                         ele.style.height = (30 + ele.contentWindow.document.body.scrollHeight) + 'px';
                 });
                 i.observe(ele);
