@@ -444,6 +444,11 @@ requireLogin();
 	}
 
 	$is_staff = strpos($_SESSION["user"], "@bebraven.org") !== FALSE || strpos($_SESSION["user"], "@beyondz.org") !== FALSE;
+        // For test accounts, treat them as users, not staff, b/c we want to mimic the user experience with test accounts
+        // and if we need to do staff stuff, we should use actual bebraven.org accounts.
+        // Example test account: brian+testblah@bebraven.org
+	if (preg_match('/\+test.*@bebraven.org/', $_SESSION["user"]))
+          $is_staff = false;
 
 	if(isset($_POST["operation"])) {
 		switch($_POST["operation"]) {
