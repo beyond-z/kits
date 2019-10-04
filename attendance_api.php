@@ -7,7 +7,6 @@ function get_attendance_api_result($course_id, $users) {
 	// I want events and statuses.
 
 	$response = array("events" => get_all_events($course_id), "statuses" => array());
-
 	$events_in_the_past = 0;
 	foreach($response["events"] as $event) {
 		if($event["event_time"] && strtotime($event["event_time"]) < time())
@@ -35,7 +34,7 @@ if(php_sapi_name() == 'cli') {
 	// if calling it from the command line, instead sync it with Canvas
 	// via the api bridges
 
-	echo "*****\nRunning at " . date('r') . "\n";
+	echo "\n*****\nRunning at " . date('r') . "\n";
 
 	function set_canvas_attendance_info($course_id, $column_number, $uid, $text) {
 		$ch = curl_init();
@@ -91,17 +90,30 @@ if(php_sapi_name() == 'cli') {
 	}
 
 	foreach($braven_courses as $course_id) {
-		$cohort_info = get_cohorts_info($course_id);
+
+                // Note: this is also painfully slow, but this script is only run once a week in the middle
+                // of the night from a cronjob on the Kits server, so for now it's fine.
+	        echo "  Calling: populate_times_from_canvas(course_id=".$course_id.")\n";
+                populate_times_from_canvas($course_id);
+		
+	        echo "  Calling: get_cohorts_info(course_id=".$course_id.")\n";
+                $cohort_info = get_cohorts_info($course_id);
+        
 		$column_number = get_canvas_attendance_column_id($course_id);
+
+	        echo "  Loading attendance data to send for course_id=".$course_id.")\n";
 		$result = get_attendance_api_result($course_id, $cohort_info["students"]);
 
-    // TODO: this is brutally slow since it loops over all students in all active courses and updates the value through the API one at a time.
-    // Either figure out how to set the values in bulk or maybe check timestamps of last time 
-    // data was sent (or query canvas for last time value was updated on the canvas end)
-    // vs last time attendance status was updated and only send new ones.
-    // Or maybe just pull all attendance data from canvas in one go per course, then only send updates for changed values.
+
+                // TODO: this is brutally slow since it loops over all students in all active courses and updates the value through the API one at a time.
+                // Either figure out how to set the values in bulk or maybe check timestamps of last time 
+                // data was sent (or query canvas for last time value was updated on the canvas end)
+                // vs last time attendance status was updated and only send new ones.
+                // Or maybe just pull all attendance data from canvas in one go per course, then only send updates for changed values.
 		foreach($result["statuses"] as $uid => $status) {
-			set_canvas_attendance_info($course_id, $column_number, $uid, $status["total_present"] . "/". $status["total_events"]);
+                        $attendance_data = $status["total_present"] . "/". $status["total_events"];
+	                echo "  Calling set_canvas_attendance_info(course_id=" . $course_id . ", uid=" . $uid . ", attendance=". $attendance_data .")\n";
+			set_canvas_attendance_info($course_id, $column_number, $uid, $attendance_data);
 		}
 	}
 } else {

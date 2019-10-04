@@ -82,7 +82,28 @@ function populate_times_from_canvas($course_id) {
 		// translate to mysql format
 		$data["end_at"] = str_replace("T", " ", str_replace("Z", "", $data["end_at"])); 
 
-		echo "{$data["end_at"]} $course_id / {$data["event"]}";
+                // TODO: there is a bug here. This result of get_canvas_learning_labs()
+                // is every individual cohort (aka section) and the LL event time for that cohort. 
+                // But we completely ignore that in the local attendance_events database. 
+                // All cohorts are set null and the event_time for the overall LL is set to the last
+                // cohort datetime that happens to be in the list which could be incorrect for some cohorts. 
+                //
+                // The auto-nag feature directly queries the Portal when deciding the event_time, 
+                // so this doesn't currently impact that feature but if we try to optimize it by looking at
+                // the local database for times instead of hitting the Portal hourly to get them it wouldn't work properly.
+                //
+                // The other feature which relies on this is the one which pushes attendance data to the Portal 
+                // to show up in the gradebook. So say that an LL was on Tues/Thurs
+                // and the event_time for the overall LL was set to Tues in attendance_events. If we ran this on a 
+                // Wed, the gradebook would show correctly for the Tues cohorts, but the Thurs ones haven't happened yet
+                // but we think they did, so the gradebook would should that they were present for one less than the total
+                // LLs that have happened (and the total is wrong). 
+                //
+                // Fortunately, this bug is currently masked by that fact that we only run this in the middle of the night
+                // on Sunday. Dear me. I'm leaving this comment here for the day that we try to optimize this stuff and update
+                // the gradebook more frequently and all sorts of weirdness happens b/c of this... 
+
+		// echo "{$data["end_at"]} $course_id / {$data["event"]}\n";
 
 		$statement = $pdo->prepare("
 			UPDATE

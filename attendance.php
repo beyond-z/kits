@@ -597,6 +597,7 @@ requireLogin();
 		foreach($cohort_info["sections"] as $section) {
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
+				// TODO: if My Cohort Info isn't set, these three variables maybe empty/null. Handle this.
 				$enrollment["lc_name"] = $section["lc_name"];
 				$enrollment["lc_email"] = strtolower($section["lc_email"]);
 				$enrollment["section_name"] = $section["name"];
