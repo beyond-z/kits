@@ -597,7 +597,11 @@ requireLogin();
 		foreach($cohort_info["sections"] as $section) {
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
-				// TODO: if My Cohort Info isn't set, these three variables maybe empty/null. Handle this.
+                               // TODO: if My Cohort Info isn't set, these three variables maybe empty/null. Handle this. Don't know the logic,
+                                // so for now just log it to the console.
+                                if (!array_key_exists("lc_name", $section) || !array_key_exists("lc_email", $section)){
+                                    echo("<script>console.log('Either lc_name or lc_email not found in My Cohort Info on the Portal for section=". $section["name"] ."');</script>");
+                                }
 				$enrollment["lc_name"] = $section["lc_name"];
 				$enrollment["lc_email"] = strtolower($section["lc_email"]);
 				$enrollment["section_name"] = $section["name"];
