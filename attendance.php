@@ -444,6 +444,11 @@ requireLogin();
 	}
 
 	$is_staff = strpos($_SESSION["user"], "@bebraven.org") !== FALSE || strpos($_SESSION["user"], "@beyondz.org") !== FALSE;
+        // For test accounts, treat them as users, not staff, b/c we want to mimic the user experience with test accounts
+        // and if we need to do staff stuff, we should use actual bebraven.org accounts.
+        // Example test account: brian+testblah@bebraven.org
+	if (preg_match('/\+test.*@bebraven.org/', $_SESSION["user"]))
+          $is_staff = false;
 
 	if(isset($_POST["operation"])) {
 		switch($_POST["operation"]) {
@@ -592,6 +597,11 @@ requireLogin();
 		foreach($cohort_info["sections"] as $section) {
 			$students = array();
 			foreach($section["enrollments"] as $enrollment) {
+                               // TODO: if My Cohort Info isn't set, these three variables maybe empty/null. Handle this. Don't know the logic,
+                                // so for now just log it to the console.
+                                if (!array_key_exists("lc_name", $section) || !array_key_exists("lc_email", $section)){
+                                    echo("<script>console.log('Either lc_name or lc_email not found in My Cohort Info on the Portal for section=". $section["name"] ."');</script>");
+                                }
 				$enrollment["lc_name"] = $section["lc_name"];
 				$enrollment["lc_email"] = strtolower($section["lc_email"]);
 				$enrollment["section_name"] = $section["name"];
