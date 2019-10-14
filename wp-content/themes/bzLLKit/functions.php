@@ -1053,9 +1053,10 @@ function bz_attendance($atts, $content = null) {
     if($width < 20)
        $width = 100;
 
-    $what = str_replace("&#038;", "&", get_the_title());
-    if(isset($atts["event"]))
+   $what = get_the_title();
+   if(isset($atts["event"])){
     	$what = $atts["event"];
+    }
 
     return "<iframe onload=\"
         // fall back to a minimum height because the iframe document height trick doesn't work in IE

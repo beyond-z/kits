@@ -182,7 +182,7 @@ function populate_times_from_canvas($course_id) {
         // on Sunday. Dear me. I'm leaving this comment here for the day that we try to optimize this stuff and update
         // the gradebook more frequently and all sorts of weirdness happens b/c of this... 
 
-        // echo "{$data["end_at"]} $course_id / {$data["event"]}\n";
+        //echo "### Course: $course_id -- Setting event_time for: {$data["event"]} to {$data["end_at"]}\n";
 
         $statement = $pdo->prepare("
                 UPDATE
