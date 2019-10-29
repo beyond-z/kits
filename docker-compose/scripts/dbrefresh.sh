@@ -1,47 +1,29 @@
 #!/bin/bash
 echo "Refreshing your local dev database from the staging db"
 
-dbfilename='kits_dev_db_dump_latest.sql.gz'
-dbfilepathgz="/tmp/$dbfilename"
-dbfilename_attendance='kits_dev_attendance_db_dump_latest.sql.gz'
-dbfilepathgz_attendance="/tmp/$dbfilename_attendance"
+dbfilename='kits_staging_db_latest.sql.gz'
+dbfilename_attendance='kits_staging_attendance_db_latest.sql.gz'
 
-aws s3 --region us-west-1 cp "s3://kits-dev-db-dumps/$dbfilename" $dbfilepathgz
+aws s3 cp "s3://kits-staging-db-dumps/$dbfilename" - | gunzip | sed -e "
+  s/https:\/\/stagingkits.bebraven.org/http:\/\/kitsweb:3005/g;
+  s/stagingsso.bebraven.org/ssoweb:3002/g;
+" | docker-compose exec -T kitsdb mysql -h kitsdb -u wordpress "-pwordpress" wordpress
 if [ $? -ne 0 ]
 then
- echo "Failed downloading s3://kits-dev-db-dumps/$dbfilename"
+ echo "Failed restoring from: s3://kits-staging-db-dumps/$dbfilename"
  echo "Make sure that awscli is installed: pip3 install awscli"
  echo "Also, make sure and run 'aws configure' and put in your Access Key and Secret."
  echo "Lastly, make sure your IAM account is in the Developers group. That's where the policy to access this bucket is defined."
  exit 1;
 fi
 
-gunzip < $dbfilepathgz | docker-compose exec -T kitsdb mysql -h kitsdb -u wordpress "-pwordpress" wordpress
+aws s3 cp "s3://kits-staging-db-dumps/$dbfilename_attendance" - | gunzip \
+  | docker-compose exec -T kitsdb mysql -h kitsdb -u wordpress "-pwordpress" braven_attendance
 if [ $? -ne 0 ]
 then
-   echo "Error: failed loading the dev database into the dev db. File we tried to load: $dbfilepathgz"
-   exit 1;
-fi
-
-rm $dbfilepathgz
-
-aws s3 --region us-west-1 cp "s3://kits-dev-db-dumps/$dbfilename_attendance" $dbfilepathgz_attendance
-if [ $? -ne 0 ]
-then
- echo "Failed downloading s3://kits-dev-db-dumps/$dbfilename_attendance"
+ echo "Failed restoring from s3://kits-staging-db-dumps/$dbfilename_attendance"
  exit 1;
 fi
-
-# to "Only logged in users can see the site" and also the setting "CAS Logins" to the proper stuff as shown in the
-# Kit Production Setup doc.
-gunzip < $dbfilepathgz_attendance| docker-compose exec -T kitsdb mysql -h kitsdb -u wordpress "-pwordpress" braven_attendance
-if [ $? -ne 0 ]
-then
-   echo "Error: failed loading the dev database into the dev db. File we tried to load: $dbfilepathgz_attendance"
-   exit 1;
-fi
-
-rm $dbfilepathgz_attendance
 
 # In the dev env, I logged into http://kitsweb:3005/wp-login.php?external=wordpress
 # Using the local admin account (same as prod) and configured this plugin to point to
