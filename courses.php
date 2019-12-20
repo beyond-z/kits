@@ -1,9 +1,9 @@
 <?php
-  $braven_courses = array(
-    "sjsu" => 71,
-    "run" => 89,
-    "nlu" => 87,
-    "schwab" => 67,
-    "bravenx-pilot" => 81,
-    "lehman" => 91,
-  );
+    $braven_courses = array(
+        "sjsu" => 71,
+        "run" => 89,
+        "nlu" => 87,
+        "schwab" => 67,
+        "bravenx-pilot" => 81,
+        "lehman" => 91,
+    );
