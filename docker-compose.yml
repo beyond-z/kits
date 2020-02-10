@@ -50,7 +50,7 @@ services:
       # that feature.
       ATTENDANCE_API_KEY: devattendanceapikey
       CANVAS_TOKEN: BEW8ldtbMypKZiCs8EmW2eQXfOoBpfOEwNJXwyvfIKZIpMgQzBfYUugc4V20oFgt
-      BRAVEN_SSO_DOMAIN: ssoweb:3002
+      BRAVEN_SSO_DOMAIN: platformweb:3020/cas
       BRAVEN_PORTAL_DOMAIN: canvasweb:3000
     working_dir: /var/www/html
     volumes:
